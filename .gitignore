@@ -2,3 +2,15 @@
 *.egg-info
 .tox
 doc/source/sourcecode
+build
+dist
+deb_dist
+*.aux
+*.log
+*.nav
+*.out
+*.pdf
+*.snm
+*.toc
+*.synctex.gz
+.gitignore
