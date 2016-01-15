@@ -42,7 +42,7 @@ class Json_url(Driver):
         while not self.stop_request_pending():
             json_content = json.load(urllib2.urlopen(self.kwargs.get('url')))
             for i in range(len(self.probes_names)):
-                probe = json_content.get(self.probes_names[i].split('.')[1])
+                probe = json_content.get(self.probes_names[i][0].split('.')[1])
                 # Grid5000 specific as we declare probes as site.cluster-#
                 if probe:
                     measurements = self.create_measurements(self.probe_ids[i],
