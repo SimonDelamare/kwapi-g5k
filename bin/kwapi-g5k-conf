@@ -92,7 +92,7 @@ try:
                     if 'wattmetre' in sensor['power']:
                         equips[pdu['uid']] = {'driver': 'Json_url', 'parameters':
                             {'url': sensor['power']['wattmetre']['www']['url']},
-                            'probes': [], 'probes_names': []}
+                            'mapping': [], 'probes': [], 'probes_names': []}
 except:
     logger.error('Fail to retrieve power equipments')
 
@@ -152,7 +152,6 @@ logger.info('Retrieving hosts plug mapping')
 switch_probes = {}
 logger.info('Map port to hostname')
 try:
-    global_outlet = 0
     for cluster in get_site_clusters(site):
         nodes = get_resource_attributes('/sites/' + site + '/clusters/' + cluster + \
                                         '/nodes')['items']
@@ -185,9 +184,7 @@ try:
                             equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
                 if 'www' in power['via']:
                     if not 'per_outlets' in power or power['per_outlets']:
-                        equips[pdu['uid']]['probes'].append("%s.%s" % (pdu['uid'], global_outlet))
-                        equips[pdu['uid']]['probes_names'].append("%s.%s" % (site, node['uid']))
-                        global_outlet += 1
+                        pass #used to be required to generate a first list of mappings. As from 2016-01-14, found in reference API
 
 except:
     logger.error('Failed to map power pdus')
@@ -198,16 +195,29 @@ try:
     for pdu in equips:
         equip =equips[pdu]
         if 'mapping' in equip and len(equip['mapping']) > 0:
+            # outlet 0 is by convention the global measurement for pdu
+            # but a valid mapping for the wattemeter driver
+            # If all probed elements are mapped to 0, infer
+            # that they all contribute to the same probe 
             if len(filter(lambda x: x[1] != 0, equip['mapping'])) > 0:
-                equip['mapping'] = sorted(equip['mapping'], key=lambda x: x[1])
-                equip['probes'] = [None] * equip['mapping'][-1][1]
-                equip['probes_names'] = [None] * equip['mapping'][-1][1]
-                for probe, outlet in equip['mapping']:
-                    equip['probes'][outlet-1] = "%s.%s" % (pdu, outlet)
-                    if equip['probes_names'][outlet-1]:
-                        equip['probes_names'][outlet-1].append("%s.%s"% (site, probe))
+                # find the max port number.
+		equip['mapping'] = sorted(equip['mapping'], key=lambda x: x[1])
+		nb_probes=equip['mapping'][-1][1]
+		outlet_offset=1
+		if equip['mapping'][0][1]==0:
+		   # outlet number usualy start at 1, 
+		   # but need to handle the case they start at 0
+                   # for the wattmeter probe 
+		   nb_probes+=1
+		   outlet_offset=0
+                equip['probes'] = [None] * nb_probes
+                equip['probes_names'] = [None] * nb_probes
+		for probe, outlet in equip['mapping']:
+		    equip['probes'][outlet-outlet_offset] = "%s.%s" % (pdu, outlet)
+                    if equip['probes_names'][outlet-outlet_offset]:
+			equip['probes_names'][outlet-outlet_offset].append("%s.%s"% (site, probe))
                     else:
-                        equip['probes_names'][outlet-1] = ["%s.%s" % (site, probe)]
+                        equip['probes_names'][outlet-outlet_offset] = ["%s.%s" % (site, probe)]
             else:
                 equip['probes'] = ["%s.%s" % (pdu, 0)]
                 equip['probes_names'] = [None]
