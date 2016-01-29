@@ -55,7 +55,9 @@ def retrieve_switch_if(switch):
             return ifDescr_list
 
 def format_host_name(host):
-    return re.sub(r"renater(-.*)", "renater", host)
+    # Since last execo version, no more formatting
+    # is needed for renater link
+    return host
 
 def format_host_port(port):
     return '-' + port.replace("/", "").replace(":", "")
@@ -107,7 +109,7 @@ try:
         if network_equipment.get('type', '') == 'network_equipment':
             switch = network_equipment.get('uid', None)
             switch_uid = to_long_uid(switch, site)
-            if switch_uid in switches_cluster:
+            if (switch_uid in switches_cluster or switch in switches_cluster):
                 # Iter on switch linecards/ports
                 l = -1
                 for linecard in network_equipment.get('linecards', []):
@@ -122,11 +124,10 @@ try:
                         host_uid = None
                         device_port = ""
                         if port.has_key('uid'):
-                            # Convert renater name
                             host_uid = format_host_name(port['uid'])
                             if port.has_key('port'):
                                 device_port = format_host_port(port['port'])
-                            if not to_long_uid(host_uid, site) in hosts_cluster:
+                            if not (to_long_uid(host_uid, site) in hosts_cluster or host_uid in hosts_cluster):
                                 host_uid = None
                         try:
                             device = host_uid + device_port if host_uid else None
