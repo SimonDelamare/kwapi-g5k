@@ -134,8 +134,14 @@ def retrieve_measurements(metric):
         probes = [site + '.' + node.split('.')[0] for node in nodes]
     elif 'only' in args:
         probes = [site + '.' + node for node in args['only'].split(',')]
-        start_time = args['from'] if 'from' in args else time.time() - 24 * 3600
-        end_time = args['to'] if 'to' in args else time.time()
+        try:
+            start_time = int(args.get('from', time.time() - 24 * 3600))
+        except:
+            start_time = int(time.time() - 24 * 3600)
+        try:
+            end_time = int(args.get('to', time.time()))
+        except:
+            end_time = int(time.time())
     else:
         if metric == 'power':
             probes = flask.request.storePower.get_probes_names()
