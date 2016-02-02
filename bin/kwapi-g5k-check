@@ -16,8 +16,6 @@ from execo_g5k.config import default_frontend_connection_params
 from execo_g5k.topology import g5k_graph
 import networkx as nx
 
-stress_time = 30
-
 h1 = httplib2.Http()
 site = getfqdn().split('.')[1]
 
@@ -25,7 +23,7 @@ def main():
     """ """
     args = set_options()
     hosts = get_hosts(args.job_name, args.site)
-    #check_energy(args.machine, hosts, args.stress_time)
+    check_energy(args.machine, hosts, args.stress_time)
     check_network(args.machine, hosts, args.stress_time)
 
 def set_options():
@@ -50,9 +48,15 @@ def set_options():
     optinout.add_argument("-s", "--site",
                           default=site,
                           help="Site to be checked")
+    optinout.add_argument("-c", "--cluster",
+                          default=None,
+                          help="Cluster to check (WARNING: not recommanded)")
     optinout.add_argument("-t", "--stress-time",
                           default=30,
                           help="Duration of the stress")
+    optinout.add_argument("-T", "--testing",
+                          default=False,
+                          help="Use testing queue")
     
     optio = optinout.add_mutually_exclusive_group()
     optio.add_argument("-q", "--quiet",
@@ -97,8 +101,13 @@ def get_hosts(job_name, site):
         job = (job_id, site)
     else:
         logger.info('No running job, submitting a new one')
-        job = oarsub([(OarSubmission(resources = "nodes=ALL", name=job_name, 
-                                     job_type='allow_classic_ssh'), site)])[0]
+        options = ""
+        if cluster:
+            options += " -p \"cluster='%s'\"" % cluster
+        if testing:
+            options += " -q testing"
+        job = oarsub([(OarSubmission(resources = "nodes=BEST", name=job_name, 
+                      job_type='allow_classic_ssh', additional_options=options), site)])[0]
     
     logger.info('Waiting for job start')
     wait_oar_job_start(job[0], job[1])
@@ -135,9 +144,9 @@ def check_energy(machine, hosts, duration):
         measures[ts] = {'stress': host.address}
         logger.info('Launching stress on %s', host_string)
         stress = SshProcess('killall stress; stress --cpu ' + 
-                            str(n_proc) + ' --timeout '+ str(duration), 
-                            host,
-                            connection_params={'user': default_frontend_connection_params['user']})
+                            str(n_proc) + ' --timeout '+ str(int(int(duration)/2)), 
+                            host)
+        wait = int(int(duration)/2)
         while True:
             resp, content = h1.request("http://" + machine + "." + site + ".grid5000.fr:5000/probes/", "GET")
             content = loads(content)
@@ -148,18 +157,22 @@ def check_energy(machine, hosts, duration):
                         measures[ts][probe] = []
                     measures[ts][probe].append(values['value'])
             if not stress.started:
-                stress.start()        
+                if wait == 0:
+                    stress.start()
+                else:
+                    wait = wait - 1
             if stress.ended:
                 i += 1
                 break
             sleep(1)
         logger.info('Stress ended, analyzing results')
+        wait = int(int(duration)/2) 
         if site + '.' + host.address.split('.')[0] in measures[ts]:
             try:
                 measure = measures[ts][site + '.' + host.address.split('.')[0]]
-                first = measure[0]
-                last = measure[-1]
-                med = np.median(measure)
+                first = np.mean(measure[:wait])
+                last = np.mean(measure[wait+1:-1])
+                med = np.median(measure[wait+1:-1])
                 logger.info('%s: %s %s %s', host.address.split('.')[0], first, med, last)
                 if abs(last - med) < abs(first - med):
                     logger.info(style.user1('OK')+ " " + host.address )
@@ -167,9 +180,9 @@ def check_energy(machine, hosts, duration):
                     logger.info('Looking for a variation in other probes')
                     for probe in sorted(map(lambda host: unicode(site + '.' + host.address.split('.')[0]), hosts)):
                         measure = measures[ts][probe]
-                        first = measure[0]
-                        last = measure[-1]
-                        med = np.median(measure)
+                        first = np.mean(measure[:wait])
+                        last = np.mean(measure[wait+1:-1])
+                        med = np.median(measure[wait+1:-1])
                         logger.debug('%s: %s %s %s', probe, first, med, last)
                         if abs(last - med) < abs(first - med) and last > first:
                             logger.error('Power from ' + host.address + 
