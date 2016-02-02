@@ -117,15 +117,45 @@ def welcome_probe(metric, probe):
     except TemplateNotFound:
         flask.abort(404)
 
+def filter_network_interface(probe):
+    # Return hostname without the interface
+    # IN: 'cacahuete.griffon-2-eth0'
+    # OUT: 'nancy.griffon-2'
+    return probe.split(".")[0] + "." + "-".join(probe.split(".")[1].split("-")[:2])
 
-@blueprint.route('/nodes/<job>/')
-def get_nodes(job):
+
+@blueprint.route('/nodes/<job>/<metric>/')
+def get_nodes(job, metric):
     """Returns nodes assigned to a job."""
     site = socket.getfqdn().split('.')
     site = site[1] if len(site) >= 2 else site[0]
     path = '/sites/' + site + '/jobs/' + job
     job_properties = get_resource_attributes(path)
     nodes = job_properties['assigned_nodes']
+    if "network" in metric:
+        probes = []
+        for node in nodes:
+            selectedProbe = site + '.' + node.split('.')[0]
+            all_probes = flask.request.probes_network
+            for probe in all_probes:
+                try:
+                    if selectedProbe == filter_network_interface(probe):
+                        probes.append("%s.%s.grid5000.fr" % (probe.split(".")[1],probe.split(".")[0]))
+                except:
+                    continue
+        nodes = probes
+    else:
+        probes = []
+        for node in nodes:
+            selectedProbe = site + '.' + node.split('.')[0]
+            all_probes = flask.request.probes_power
+            for probe in all_probes:
+                try:
+                    if selectedProbe == filter_network_interface(probe):
+                        probes.append("%s.%s.grid5000.fr" % (probe.split(".")[1],probe.split(".")[0]))
+                except:
+                    continue
+        nodes = probes
     try:
         started_at = job_properties['started_at']
     except KeyError:
