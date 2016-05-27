@@ -8,18 +8,20 @@
 from socket import getfqdn
 from pprint import pprint
 from execo import Process, logger
-from execo_g5k import get_site_clusters, get_cluster_hosts, get_host_attributes, get_resource_attributes, topology
+from execo_g5k import get_site_clusters, get_cluster_hosts, get_host_attributes, get_resource_attributes, topology, config
 import re
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 _community = 'public'
 _protocol_power = '1'
 _protocol_network = '2c'
+_output_dir = '/etc/kwapi'
 
 # Determining site
 hostname = getfqdn().split('.')
 site = hostname[1] if len(hostname) > 2 else hostname[0]
 # site = 'lyon'
+config.g5k_configuration["api_additional_args"] = ["branch=testing"]
 
 def to_long_uid(uid, site):
     if uid:
@@ -102,12 +104,14 @@ logger.info('Retrieving network equipments information')
 switchs = {}
 g = topology.g5k_graph(site)
 switches_cluster = [x[0] for x in filter(lambda n: n[1]['kind'] in ['switch', 'router'], g.nodes(True))]
+logger.info("switchs %s" % switches_cluster)
 hosts_cluster = set(g.nodes()) - set(switches_cluster)
 
 try:
     for network_equipment in get_resource_attributes('/sites/'+site+'/network_equipments/')['items']:
         if network_equipment.get('type', '') == 'network_equipment':
             switch = network_equipment.get('uid', None)
+            logger.info("switch %s" % switch)
             switch_uid = to_long_uid(switch, site)
             if (switch_uid in switches_cluster or switch in switches_cluster):
                 # Iter on switch linecards/ports
@@ -129,23 +133,27 @@ try:
                                 device_port = format_host_port(port['port'])
                             if not (to_long_uid(host_uid, site) in hosts_cluster or host_uid in hosts_cluster):
                                 host_uid = None
-                        try:
-                            device = host_uid + device_port if host_uid else None
-                            port_name = snmp_pattern.replace('%LINECARD%', str(l)).replace('%PORT%', str(p))
-                            port_uid = "%d-%d" % (l, p)
-                            if host_uid:
-                                if switchs.has_key(switch):
-                                    if switchs.has_key(port_name):
-                                        logger.error('Collision on switch %s port %s host %s'
-                                                     % (switch, port_name, host_uid))
-                                    switchs[switch][port_name] = (device, port_uid)
-                                else:
-                                    switchs[switch] = {}
-                                    switchs[switch][port_name] = (device, port_uid)
-                        except:
-                            logger.error("Can't write %s:%s:%d:%d:%s" % (switch, snmp_pattern, l, p, host_uid))
+                        #try:
+                        device = host_uid + device_port if host_uid else None
+                        port_name = snmp_pattern.replace('%LINECARD%', str(l)).replace('%PORT%', str(p))
+                        port_uid = "%d-%d" % (l, p)
+                        if host_uid:
+                            logger.info("host uid %s" % host_uid)
+                            logger.info("s_key ? %s" % switchs.has_key(switch))
+                            if switchs.has_key(switch):
+                                logger.info("YES")
+                                if switchs.has_key(port_name):
+                                    logger.error('Collision on switch %s port %s host %s'
+                                                 % (switch, port_name, host_uid))
+                                switchs[switch][port_name] = (device, port_uid)
+                            else:
+                                logger.info("NO")
+                                switchs[switch] = {}
+                                switchs[switch][port_name] = (device, port_uid)
+                        #except:
+                        #    logger.error("Can't write %s:%s:%d:%d:%s" % (switch, snmp_pattern, l, p, host_uid))
 
-    #pprint(equips)
+    pprint(switchs)
 except:
     logger.error('Failed to retrieve network monitoring')
 
@@ -372,19 +380,19 @@ f.flush()
 f.write("\npowerProbes = %s" % powerProbes)
 f.close()
 
-logger.info('Adding drivers from API to /etc/kwapi/drivers.conf')
-bak_conf = Process('[ -f /etc/kwapi/drivers.conf.orig ] && cp /etc/kwapi/drivers.conf.orig /etc/kwapi/drivers.conf || cp /etc/kwapi/drivers.conf /etc/kwapi/drivers.conf.orig')
+logger.info('Adding drivers from API to %s/drivers.conf' % _output_dir)
+bak_conf = Process('[ -f %s/drivers.conf.orig ] && cp %s/drivers.conf.orig %s/drivers.conf || cp %s/drivers.conf %s/drivers.conf.orig' % (_output_dir, _output_dir, _output_dir, _output_dir, _output_dir))
 bak_conf.shell = True
 bak_conf.run()
-cat_conf = Process('cat /tmp/kwapi-drivers-list.conf >> /etc/kwapi/drivers.conf ; rm /tmp/kwapi-drivers-list.conf')
+cat_conf = Process('cat /tmp/kwapi-drivers-list.conf >> %s/drivers.conf ; rm /tmp/kwapi-drivers-list.conf' % _output_dir)
 cat_conf.shell = True
 cat_conf.run()
-logger.info('Adding probe-list from API to /etc/kwapi/live.conf')
-logger.info('Adding topology to /etc/kwapi/live.conf')
-bak_conf = Process('[ -f /etc/kwapi/live.conf.orig ] && cp /etc/kwapi/live.conf.orig /etc/kwapi/live.conf || cp /etc/kwapi/live.conf /etc/kwapi/live.conf.orig')
+logger.info('Adding probe-list from API to %s/live.conf' % _output_dir)
+logger.info('Adding topology to %s/live.conf' % _output_dir)
+bak_conf = Process('[ -f %s/live.conf.orig ] && cp %s/live.conf.orig %s/live.conf || cp %s/live.conf %s/live.conf.orig' % (_output_dir, _output_dir, _output_dir, _output_dir, _output_dir))
 bak_conf.shell = True
 bak_conf.run()
-cat_conf = Process('cat /tmp/kwapi-live-list.conf >> /etc/kwapi/live.conf ; rm /tmp/kwapi-live-list.conf')
+cat_conf = Process('cat /tmp/kwapi-live-list.conf >> %s/live.conf ; rm /tmp/kwapi-live-list.conf'% _output_dir)
 cat_conf.shell = True
 cat_conf.run()
 
