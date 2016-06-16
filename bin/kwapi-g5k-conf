@@ -162,12 +162,14 @@ logger.info('Retrieving hosts plug mapping')
 switch_probes = {}
 logger.info('Map port to hostname')
 try:
-    for cluster in get_site_clusters(site):
+    for cluster in get_site_clusters(site, queues=None):
         nodes = get_resource_attributes('/sites/' + site + '/clusters/' + cluster + \
                                         '/nodes')['items']
         for node in nodes:
-            if not node.has_key('sensors'):
+            if not 'sensors' in node:
                 continue
+            if not 'power' in node['sensors']:
+            	continue
             power = node['sensors']['power']
 
             if power['available']:
@@ -196,8 +198,8 @@ try:
                     if not 'per_outlets' in power or power['per_outlets']:
                         pass #used to be required to generate a first list of mappings. As from 2016-01-14, found in reference API
 
-except:
-    logger.error('Failed to map power pdus')
+except Exception as e:
+    logger.error('Failed to map power pdus: %r' % e)
 
 #pprint(equips)
 logger.info('Generating probe list for Snmp drivers')
