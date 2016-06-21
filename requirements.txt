@@ -1,6 +1,6 @@
 execo>=2.3
 cython>=0.13
-numpy
+numpy<1.7
 numexpr>=2.0.0
 d2to1>=0.2.10,<0.3
 eventlet
