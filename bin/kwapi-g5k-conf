@@ -97,8 +97,8 @@ try:
                         equips[pdu['uid']] = {'driver': 'Json_url', 'parameters':
                             {'url': sensor['power']['wattmetre']['www']['url']},
                             'mapping': [], 'probes': [], 'probes_names': []}
-except:
-    logger.error('Fail to retrieve power equipments')
+except Exception as e:
+    logger.error('Fail to retrieve power equipments: %s' % e)
 
 logger.info('Retrieving network equipments information')
 switchs = {}
