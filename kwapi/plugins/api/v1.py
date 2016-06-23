@@ -73,13 +73,16 @@ def probe_info(probe):
 def probe_value(probe, meter):
     """Returns the probe meter value."""
     message = {}
+    hostname = socket.getfqdn().split('.')
+    site = hostname[1] if len(hostname) >= 2 else hostname[0]
+    probe = site + '.' + probe
     try:
-        message[probe] = \
+        message[meter] = \
             {
-                meter: flask.request.collector.database[meter][probe]
+                probe: flask.request.collector.database[meter][probe]
             }
-    except KeyError:
-        flask.abort(404)
+    except KeyError as e:
+        flask.abort(404, str(e))
     response = flask.jsonify(message)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
