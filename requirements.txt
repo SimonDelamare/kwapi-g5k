@@ -16,3 +16,4 @@ pyzmq
 rrdtool
 webob
 httplib2
+ganglia
