@@ -32,8 +32,9 @@ def list_probes_ids():
     """Returns all known probes IDs."""
     message = {}
     try:
-        message['probe_ids'] = map(lambda x: x.split('.')[1], 
-                               flask.request.collector.database.keys())
+        message['probe_ids'] = []
+        for k in flask.request.collector.database.keys():
+            message['probe_ids'].extend(flask.request.collector.database[k].keys())
         response = flask.jsonify(message)
         response.headers.add('Access-Control-Allow-Origin', '*')
     except:
