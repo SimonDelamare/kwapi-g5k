@@ -61,9 +61,10 @@ def probe_info(probe):
     probe = site + '.' + probe
     try:
         for k in flask.request.collector.database.keys():
+            message[k] = {}
             message[k][probe] = flask.request.collector.database[k][probe]
-    except KeyError:
-        flask.abort(404)
+    except KeyError as e:
+        flask.abort(404, e)
     response = flask.jsonify(message)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
