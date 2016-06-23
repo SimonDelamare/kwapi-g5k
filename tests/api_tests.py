@@ -40,7 +40,8 @@ class APITestCase(unittest.TestCase):
 
     def test_empty_probes_unknown(self):
         rv = self.app.get('/probes/foo/')
-        self.assertEqual("{}", rv.data)
+        a = {}
+        self.assertEqual(a, json.loads(rv.data))    
 
     def test_empty_probes_metric_unknown(self):
         rv = self.app.get('/probes/foo/bar/')
