@@ -17,15 +17,11 @@
 """Export metrics to Ganglia server."""
 
 import socket
-import sys
 from kwapi.utils import cfg, log
 from ganglia import GMetric
 
 LOG = log.getLogger(__name__)
 
-cfg.CONF(sys.argv[1:],
-         project='kwapi',
-         default_config_files=['/etc/kwapi/ganglia.conf'])
 ganglia_opts = [
     cfg.BoolOpt('signature_checking',
                 required=True,
@@ -58,6 +54,7 @@ metric_name = cfg.CONF.metric_name
 metric_units = cfg.CONF.metric_units
 metric_type = cfg.CONF.metric_type
 ip_probe = {}
+
 
 def update_rrd(probe_uid, probes_names, data_type, timestamp, metrics, params):
     """Retrieve hostname and address"""
