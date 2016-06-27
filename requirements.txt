@@ -17,4 +17,5 @@ rrdtool
 webob
 httplib2
 ganglia
-tables
+pandas==0.14.1
+tables==3.1.1
