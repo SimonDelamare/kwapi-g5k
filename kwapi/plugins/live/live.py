@@ -24,8 +24,6 @@ from threading import Lock
 import struct
 import time
 import uuid
-import ast
-import re
 import socket
 from tempfile import NamedTemporaryFile
 
@@ -94,9 +92,6 @@ probes_set_network = set()
 probes_set_power = set()
 all_uid_power = set()
 
-# Loads topology from config file.
-parser = cfg.ConfigParser('/etc/kwapi/live.conf', {})
-parser.parse()
 hostname = socket.getfqdn().split('.')
 site = hostname[1] if len(hostname) >= 2 else hostname[0]
 
