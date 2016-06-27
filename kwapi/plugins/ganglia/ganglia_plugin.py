@@ -26,12 +26,12 @@ ganglia_opts = [
     cfg.BoolOpt('signature_checking',
                 required=True,
                 ),
-    cfg.MultiStrOpt('ganglia_server',
+    cfg.StrOpt('ganglia_server',
                required=True,
                ),
     cfg.MultiStrOpt('watch_probe',
-        required=False,
-        ),
+                    required=False,
+                    ),
     cfg.StrOpt('driver_metering_secret',
                required=True,
                ),
@@ -49,7 +49,7 @@ cfg.CONF.register_opts(ganglia_opts)
 hostname = socket.getfqdn().split('.')
 site = hostname[1] if len(hostname) >= 2 else hostname[0]
 
-ganglia = GMetric(cfg.CONF.ganglia_server[0])
+ganglia = GMetric(cfg.CONF.ganglia_server)
 metric_name = cfg.CONF.metric_name
 metric_units = cfg.CONF.metric_units
 metric_type = cfg.CONF.metric_type
