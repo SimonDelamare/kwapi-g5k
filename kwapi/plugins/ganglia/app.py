@@ -17,13 +17,11 @@
 """Set up the RRD server application instance."""
 
 import signal
-import socket
 import sys
 import thread
 
 from kwapi.plugins import listen
 from kwapi.utils import cfg, log
-import ganglia_plugin
 
 LOG = log.getLogger(__name__)
 
@@ -38,12 +36,14 @@ app_opts = [
 
 cfg.CONF.register_opts(app_opts)
 
+
 def start():
     """Starts Kwapi Ganglia."""
     cfg.CONF(sys.argv[1:],
              project='kwapi',
              default_config_files=['/etc/kwapi/ganglia.conf'])
     log.setup(cfg.CONF.log_file)
+    import ganglia_plugin
     thread.start_new_thread(listen, (ganglia_plugin.update_rrd,))
     signal.signal(signal.SIGINT, signal_handler)
     signal.pause()
