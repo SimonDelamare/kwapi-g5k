@@ -103,7 +103,7 @@ def find_multi_probe(probe_name, data_type):
 
     If no probe is attached to probe_name, return None.
 
-    >>> find_multi_probe("nancy.griffon-1")
+    >>> find_multi_probe("nancy.griffon-1", "power")
     nancy.griffon-1-2-3-...-x #corresponding pdu ID
     """
     try:
