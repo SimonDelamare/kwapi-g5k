@@ -80,6 +80,7 @@ setuptools.setup(
             'kwapi-hdf5 = kwapi.plugins.hdf5.app:start',
             'kwapi-live = kwapi.plugins.live.app:start',
             'kwapi-ganglia = kwapi.plugins.ganglia.app:start']
-    }
-    
+    },
+
+    test_suite='nose.collector'
 )
