@@ -22,6 +22,7 @@ import thread
 
 from kwapi.plugins import listen
 from kwapi.utils import cfg, log
+from ganglia_plugin import GangliaPlugin
 
 LOG = log.getLogger(__name__)
 
@@ -43,8 +44,8 @@ def start():
              project='kwapi',
              default_config_files=['/etc/kwapi/ganglia.conf'])
     log.setup(cfg.CONF.log_file)
-    import ganglia_plugin
-    thread.start_new_thread(listen, (ganglia_plugin.update_rrd,))
+    gp = GangliaPlugin()
+    thread.start_new_thread(listen, (gp.update_rrd,))
     signal.signal(signal.SIGINT, signal_handler)
     signal.pause()
 
