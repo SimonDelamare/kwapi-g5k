@@ -19,3 +19,4 @@ httplib2
 ganglia
 pandas==0.14.1
 tables==3.1.1
+networkx==1.7
