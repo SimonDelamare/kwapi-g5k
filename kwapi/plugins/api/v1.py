@@ -35,7 +35,8 @@ def list_probes_ids():
     try:
         message['probe_ids'] = []
         for k in flask.request.collector.database.keys():
-            message['probe_ids'].extend(flask.request.collector.database[k].keys())
+            all_probe_ids = flask.request.collector.database[k].keys()
+            message['probe_ids'].extend(all_probe_ids)
         response = flask.jsonify(message)
         response.headers.add('Access-Control-Allow-Origin', '*')
     except:
@@ -54,7 +55,7 @@ def list_probes():
 
 @blueprint.route('/probes/<probe>/')
 def probe_info(probe):
-    """Returns all information about this probe (id, timestamp, value, unit)."""
+    """Returns all information about this probe (id, timestamp, value, unit)"""
     message = {}
     hostname = socket.getfqdn().split('.')
     site = hostname[1] if len(hostname) >= 2 else hostname[0]
