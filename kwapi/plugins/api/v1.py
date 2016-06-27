@@ -31,6 +31,7 @@ def welcome():
 def list_probes_ids():
     """Returns all known probes IDs."""
     message = {}
+    response = None
     try:
         message['probe_ids'] = []
         for k in flask.request.collector.database.keys():
@@ -45,8 +46,7 @@ def list_probes_ids():
 @blueprint.route('/probes/')
 def list_probes():
     """Returns all information about all known probes."""
-    message = {}
-    message['probes'] = flask.request.collector.database
+    message = {'probes': flask.request.collector.database}
     response = flask.jsonify(message)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response

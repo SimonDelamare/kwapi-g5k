@@ -61,19 +61,18 @@ class Record(dict):
         else:
             self['integrated'] = integrated
             self['value'] = measure
-        
 
     def add(self, timestamp, measure, params):
         """Updates fields with consumption data."""
-        currentTime = timestamp 
+        current_time = timestamp
         if self['type'] != 'Gauge':
             # No integrated value
             self['value'] = measure
         else:
-            self['integrated'] += (currentTime - self['timestamp']) / 3600.0 * \
+            self['integrated'] += (current_time - self['timestamp']) / 3600.0 * \
                            (measure / 1000.0)
             self['value'] = measure
-        self['timestamp'] = currentTime
+        self['timestamp'] = current_time
 
 
 class Collector:
@@ -93,19 +92,19 @@ class Collector:
         self.lock.acquire()
         if not type(probes_names) == list:
             probes_names = list(probes_names)
-        if True: #try:
+        if True:  # try:
             if data_type not in self.database.keys():
                 self.database[data_type] = {}
             for probe_name in probes_names:
                 if probe_name in self.database[data_type].keys():
                     self.database[data_type][probe_name].add(timestamp, measure, params)
                 else:
-                    record = Record(timestamp=timestamp, measure=measure, \
-                             data_type=data_type, params=params, integrated=0.0)
+                    record = Record(timestamp=timestamp, measure=measure,
+                                    data_type=data_type, params=params, integrated=0.0)
                     self.database[data_type][probe_name] = record
-        else: #except:
+        else:  # except:
             LOG.error("Fail to add %s datas" % probe)
-        #finally:
+        # finally:
         self.lock.release()
 
     def remove(self, probe):
