@@ -66,7 +66,8 @@ class GangliaPlugin:
                   'metric_units', self.metric_units,
                   'metric_type', self.metric_type)
 
-    def update_rrd(self, probe_uid, probes_names, data_type, timestamp, metrics, params):
+    def update_rrd(self, probe_uid, probes_names, data_type, timestamp,
+                   metrics, params):
         """Retrieve hostname and address"""
         if not data_type == 'power':
             return
@@ -94,7 +95,8 @@ class GangliaPlugin:
                 units=self.metric_units,
                 type=self.metric_type,
                 value=int(metrics),
-                hostname='%s:%s' % (self.ip_probe[probe_id][0], self.ip_probe[probe_id][1]),
+                hostname='%s:%s' % (self.ip_probe[probe_id][0],
+                                    self.ip_probe[probe_id][1]),
                 spoof=True
             )
         return

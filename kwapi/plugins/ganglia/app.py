@@ -50,5 +50,5 @@ def start():
     signal.pause()
 
 
-def signal_handler(signal, frame):
+def signal_handler(s, f):
         sys.exit(0)
