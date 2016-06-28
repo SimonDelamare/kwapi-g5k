@@ -210,8 +210,9 @@ class HDF5_Collector:
 
     def get_probes_names(self):
         probes_names = set()
-        for probe_id in list(probes_sets[self.data_type]):
-            for probe in probes_names_maps[self.data_type].neighbors(probe_id):
+        for probe_id in list(probes_sets.get(self.data_type, [])):
+            metric_map = probes_names_maps.get(self.data_type, nx.Graph())
+            for probe in metric_map.neighbors(probe_id):
                 try:
                     probes_names.add(probe)
                 except:
