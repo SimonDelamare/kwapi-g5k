@@ -71,7 +71,17 @@ class HDF5TestCase(unittest.TestCase):
 
     def test_empty_metric_timeseries(self):
         rv = self.app.get('/power/timeseries/', headers={"Accept": "grid5000"})
-        self.assertEqual({}, stringtojson(rv))
+        a = {u'items': [],
+             u'links': [
+                 {u'href': u'/sid/%s' % self.site,
+                  u'rel': u'self',
+                  u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1'},
+                 {u'href': u'/sid/sites/%s' % self.site,
+                  u'rel': u'parent',
+                  u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1'}],
+             u'offset': 0,
+             u'total': 0}
+        self.assertEqual(a, stringtojson(rv))
 
 if __name__ == '__main__':
     unittest.main()
