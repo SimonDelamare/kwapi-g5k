@@ -72,21 +72,27 @@ def update_hdf5(probe, probes_names, data_type, timestamp, metrics, params):
         probes_names = list(probes_names)
     for probe_name in probes_names:
         if data_type in probes_names_maps:
-            probes_names_maps[data_type].add_edge(probe_name,probe)
+            probes_names_maps[data_type].add_edge(probe_name, probe)
         else:
             probes_names_maps[data_type] = nx.Graph()
-            probes_names_maps[data_type].add_edge(probe_name,probe)
+            print probes_names_maps, data_type, probe_name, probe
+            probes_names_maps[data_type].add_edge(probe_name, probe)
     buffered_values[data_type].put((probe, timestamp, metrics))
     if probes_sets.get(data_type, None):
         probes_sets[data_type].add(probe)
     else:
         probes_sets[data_type] = set([probe])
 
+
 def get_probe_path(probe):
     site = probe.split(".")[0]
     host = ".".join(probe.split(".")[1:])
     return "/%s/%s" % (site, host.replace('.', "__").replace('-', '_'))
 
+
+def clear_probes():
+    probes_names_maps = {}
+    probes_sets = {}
 
 class ProbeMeasures(IsDescription):
     timestamp = Float64Col()
