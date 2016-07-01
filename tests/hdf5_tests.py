@@ -1,5 +1,6 @@
 import os
 import kwapi.plugins.hdf5.app as app
+import kwapi.plugins.hdf5.hdf5_collector as h5c
 import unittest
 import tempfile
 import time
@@ -32,9 +33,9 @@ class HDF5TestCase(unittest.TestCase):
         app.cfg.CONF.split_weeks = 0
         app.cfg.CONF.split_months = 1
         my_app = app.make_app()
-        self.storePower = app.storePower
-        self.storeNetworkIn = app.storeNetworkIn
-        self.storeNetworkOut = app.storeNetworkOut
+        self.storePower = my_app.storePower
+        self.storeNetworkIn = my_app.storeNetworkIn
+        self.storeNetworkOut = my_app.storeNetworkOut
         self.app = my_app.test_client()
         self.site = socket.getfqdn().split('.')
         self.site = self.site[1] if len(self.site) >= 2 else self.site[0]
@@ -60,6 +61,12 @@ class HDF5TestCase(unittest.TestCase):
         self.storePower = None
         self.storeNetworkIn = None
         self.storeNetworkOut = None
+        h5c.clear_probes()
+
+    def add_value(self, probe, probes_names, data_type, timestamp, metrics,
+                  params):
+        return h5c.update_hdf5(probe, probes_names, data_type,
+                                           timestamp, metrics, params)
 
     def test_empty_root(self):
         rv = self.app.get("/", headers={"Accept": "grid5000"})
@@ -80,7 +87,150 @@ class HDF5TestCase(unittest.TestCase):
                   u'rel': u'parent',
                   u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1'}],
              u'offset': 0,
-             u'total': 0}
+             u'total': 0
+             }
+        self.assertEqual(a, stringtojson(rv))
+
+    def test_root(self):
+        t = int(time.time())
+        probe = "%s.%s" % (self.site, "bar-1")
+        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
+        switch = "%s.%s.%d" % (self.site, "switch", 1)
+        self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
+        self.add_value(switch, [probe], 'network_in', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        self.add_value(switch, [probe], 'network_out', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        rv = self.app.get("/", headers={"Accept": "grid5000"})
+        a = {
+            u'items':
+                [
+                    {u'uid': u'power',
+                     u'links': [
+                         {u'href': u'/sid/sites/%s/metrics/power' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                          u'rel': u'self'},
+                         {u'href': u'/sid/sites/%s/metrics/power/timeseries' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                          u'rel': u'collection',
+                          u'title': u'timeseries'},
+                         {u'href': u'/sid/sites/%s' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
+                          u'rel': u'parent'}],
+                     u'available_on': [u'1.pdu.%s.grid5000.fr'% self.site],
+                     u'step': 1,
+                     u'timeseries': [
+                         {u'pdp_per_row': 1,
+                          u'cf': u'LAST',
+                          u'xff': 0}],
+                     u'type': u'metric'},
+                    {u'uid': u'network_in',
+                     u'links': [
+                         {u'href': u'/sid/sites/%s/metrics/network_in' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                          u'rel': u'self'},
+                         {u'href': u'/sid/sites/%s/metrics/network_in/timeseries' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                          u'rel': u'collection',
+                          u'title': u'timeseries'},
+                         {u'href': u'/sid/sites/%s' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
+                          u'rel': u'parent'}],
+                     u'available_on': [u'1.switch.%s.grid5000.fr' % self.site],
+                     u'step': 1,
+                     u'timeseries': [
+                         {u'pdp_per_row': 1,
+                          u'cf': u'LAST',
+                          u'xff': 0}],
+                     u'type': u'metric'},
+                    {u'uid': u'network_out',
+                     u'links': [
+                         {u'href': u'/sid/sites/%s/metrics/network_out' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                          u'rel': u'self'},
+                         {u'href': u'/sid/sites/%s/metrics/network_out/timeseries' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                          u'rel': u'collection',
+                          u'title': u'timeseries'},
+                         {u'href': u'/sid/sites/%s' % self.site,
+                          u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
+                          u'rel': u'parent'}],
+                     u'available_on': [u'1.switch.%s.grid5000.fr' % self.site],
+                     u'step': 1,
+                     u'timeseries': [
+                         {u'pdp_per_row': 1,
+                          u'cf': u'LAST',
+                          u'xff': 0}],
+                     u'type': u'metric'}]}
+        self.assertEqual(a, stringtojson(rv))
+
+    def test_metric(self):
+        t = int(time.time())
+        probe = "%s.%s" % (self.site, "bar-1")
+        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
+        switch = "%s.%s.%d" % (self.site, "switch", 1)
+        self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
+        self.add_value(switch, [probe], 'network_in', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        self.add_value(switch, [probe], 'network_out', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        rv = self.app.get('/power/', headers={"Accept": "grid5000"})
+        a = {u'uid': u'power',
+             u'links': [
+                 {u'href': u'/sid/sites/%s/metrics/power' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                  u'rel': u'self'},
+                 {u'href': u'/sid/sites/%s/metrics/power/timeseries' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                  u'rel': u'collection',
+                  u'title': u'timeseries'},
+                 {u'href': u'/sid/sites/%s' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
+                  u'rel': u'parent'}],
+             u'available_on': [u'1.pdu.%s.grid5000.fr' % self.site],
+             u'step': 1,
+             u'timeseries': [
+                 {u'pdp_per_row': 1,
+                  u'cf': u'LAST',
+                  u'xff': 0}],
+             u'type': u'metric'}
+        self.assertEqual(a, stringtojson(rv))
+
+    def test_metric_timeseries(self):
+        t = int(time.time())
+        probe = "%s.%s" % (self.site, "bar-1")
+        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
+        switch = "%s.%s.%d" % (self.site, "switch", 1)
+        self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
+        self.add_value(switch, [probe], 'network_in', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        self.add_value(switch, [probe], 'network_out', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        rv = self.app.get('/power/timeseries/', headers={"Accept": "grid5000"})
+        a = {u'items': [
+            {u'from': t,
+             u'uid': u'bar-1',
+             u'links': [
+                 {u'href': u'/sid/sites/%s/metrics/power/timeseries/bar-1' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Timeseries+json;level=1',
+                  u'rel': u'self'},
+                 {u'href': u'/sid/sites/%s/metrics/power' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                  u'rel': u'parent'}],
+             u'type': u'timeseries',
+             u'to': t+300,
+             u'values': [],
+             u'timestamps': [],
+             u'resolution': 1}],
+             u'total': 1,
+             u'links': [
+                 {u'href': u'/sid/%s' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                  u'rel': u'self'},
+                 {u'href': u'/sid/sites/%s' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                  u'rel': u'parent'}],
+             u'offset': 0}
         self.assertEqual(a, stringtojson(rv))
 
 if __name__ == '__main__':
