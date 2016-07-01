@@ -45,9 +45,11 @@ app_opts = [
 cfg.CONF.register_opts(app_opts)
 
 writters = []
+
 storePower = None
 storeNetworkIn = None
 storeNetworkOut = None
+
 
 def make_app():
     """Instantiates Flask app, attaches collector database. """
@@ -55,16 +57,16 @@ def make_app():
     app = flask.Flask(__name__)
     app.register_blueprint(v1.blueprint, url_prefix='')
 
-    storePower = HDF5_Collector('power')
-    storeNetworkIn = HDF5_Collector('network_in')
-    storeNetworkOut = HDF5_Collector('network_out')
+    app.storePower = HDF5_Collector('power')
+    app.storeNetworkIn = HDF5_Collector('network_in')
+    app.storeNetworkOut = HDF5_Collector('network_out')
 
     thread.start_new_thread(listen, (hdf5_collector.update_hdf5,))
-    writters.append(Thread(target=storePower.write_datas,
+    writters.append(Thread(target=app.storePower.write_datas,
                            name="PowerWritter"))
-    writters.append(Thread(target=storeNetworkIn.write_datas,
+    writters.append(Thread(target=app.storeNetworkIn.write_datas,
                            name="NetworkInWritter"))
-    writters.append(Thread(target=storeNetworkOut.write_datas,
+    writters.append(Thread(target=app.storeNetworkOut.write_datas,
                            name="NetworkOutWritter"))
     for writter in writters:
         writter.daemon = True
@@ -72,9 +74,9 @@ def make_app():
 
     @app.before_request
     def attach_config():
-        flask.request.storePower = storePower
-        flask.request.storeNetworkIn = storeNetworkIn
-        flask.request.storeNetworkOut = storeNetworkOut
+        flask.request.storePower = app.storePower
+        flask.request.storeNetworkIn = app.storeNetworkIn
+        flask.request.storeNetworkOut = app.storeNetworkOut
 
     return app
 
