@@ -197,6 +197,10 @@ class HDF5TestCase(unittest.TestCase):
              u'type': u'metric'}
         self.assertDictEqual(a, stringtojson(rv))
 
+    def test_unknown_metric(self):
+        rv = self.app.get('/foo/')
+        assert "404" in rv.status
+
     def test_metric_timeseries(self):
         t = int(time.time())
         self.maxDiff = None
