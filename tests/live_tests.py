@@ -102,5 +102,19 @@ class HDF5TestCase(unittest.TestCase):
         rv = self.app.get("/foo/last/minute/")
         self.assertIn("404", rv.status)
 
+    def test_empty_probe(self):
+        rv = self.app.get("/energy/probe/bar-1/")
+        self.assertIn("404", rv.status)
+        rv = self.app.get("/network/probe/bar-1/")
+        self.assertIn("404", rv.status)
+        rv = self.app.get("/foo/probe/bar-1/")
+        self.assertIn("404", rv.status)
+
+    def test_empty_zip(self):
+        rv = self.app.get("/zip/")
+        self.assertIn("404", rv.status)
+        rv = self.app.get("/zip/?probes=bar-1")
+        self.assertIn("404", rv.status)
+
 if __name__ == '__main__':
     unittest.main()
