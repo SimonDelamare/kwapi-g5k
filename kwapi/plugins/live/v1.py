@@ -188,6 +188,8 @@ def send_zip():
     scales = ['minute', 'hour', 'day', 'week', 'month', 'year']
     if len(probes) == 0:
         probes = flask.request.probes_network
+    if len(probes) == 0:
+        flask.abort(404)
     for metric in metrics:
         for probe in probes:
             try:
