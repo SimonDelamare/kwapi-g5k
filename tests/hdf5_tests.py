@@ -239,5 +239,51 @@ class HDF5TestCase(unittest.TestCase):
         b['items'][0]['to'] = int(b['items'][0]['to'])
         self.assertDictEqual(a, b)
 
+    def test_metric_timeseries_only(self):
+        t = int(time.time())
+        self.maxDiff = None
+        probe = "%s.%s" % (self.site, "bar-1")
+        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
+        switch = "%s.%s.%d" % (self.site, "switch", 1)
+        self.add_value(pdu, [probe], 'power', t, 1,
+                       {'type': "power", 'unit': "KW"})
+        self.add_value(switch, [probe], 'network_in', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        self.add_value(switch, [probe], 'network_out', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        rv = self.app.get('/power/timeseries/?only=bar-1', headers={"Accept": "grid5000"})
+        a = {u'items': [
+            {u'from': t-24*3600,
+             u'uid': u'bar-1',
+             u'links': [
+                 {
+                     u'href': u'/sid/sites/%s/metrics/power/timeseries/bar-1' % self.site,
+                     u'type': u'application/vnd.fr.grid5000.api.Timeseries+json;level=1',
+                     u'rel': u'self'},
+                 {u'href': u'/sid/sites/%s/metrics/power' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                  u'rel': u'parent'}],
+             u'type': u'timeseries',
+             u'to': t,
+             u'values': [1],
+             u'timestamps': [t],
+             u'resolution': 1}],
+            u'total': 1,
+            u'links': [
+                {u'href': u'/sid/%s' % self.site,
+                 u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                 u'rel': u'self'},
+                {u'href': u'/sid/sites/%s' % self.site,
+                 u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                 u'rel': u'parent'}],
+            u'offset': 0}
+        b = stringtojson(rv)
+        # Round of time value for easy testing...
+        b['items'][0]['from'] = int(b['items'][0]['from'])
+        b['items'][0]['to'] = int(b['items'][0]['to'])
+        # Round timestamp to 0.1
+        b['items'][0]['timestamps'][0] = int(b['items'][0]['timestamps'][0]*10/10)
+        self.assertDictEqual(a, b)
+
 if __name__ == '__main__':
     unittest.main()
