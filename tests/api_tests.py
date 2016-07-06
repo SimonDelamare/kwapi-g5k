@@ -9,6 +9,7 @@ import socket
 
 class APITestCase(unittest.TestCase):
     def setUp(self):
+        self.maxDiff = None
         self.log_file_fd, app.cfg.CONF.log_file = tempfile.mkstemp()
         self.endpoint_fd, probes_endpoint = tempfile.mkstemp()
         app.cfg.CONF.probes_endpoint = ["ipc://" + probes_endpoint]
@@ -19,6 +20,7 @@ class APITestCase(unittest.TestCase):
         self.site = self.site[1] if len(self.site) >= 2 else self.site[0]
 
     def tearDown(self):
+        self.col.database = {}
         os.close(self.log_file_fd)
         os.unlink(app.cfg.CONF.log_file)
         os.close(self.endpoint_fd)
@@ -97,6 +99,39 @@ class APITestCase(unittest.TestCase):
         }
         b = json.loads(rv.data)
         self.assertEqual(a, b)
+
+    def test_inter_switch(self):
+        """Test inter-switch links on the following topology
+        gw.site [1/1] <=> [1/2] switch.site
+        Traffic:
+        * from switch to gw: 1B
+        * from gw to switch: 2B
+        """
+        t = int(time.time())
+        probe = "%s.%s" % (self.site, "gw-switch")
+        switch = "%s.%s.%d-%d" % (self.site, "gw", 1, 1)
+        self.add_value(switch, [probe], 'network_in', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        self.add_value(switch, [probe], 'network_out', t, 2,
+                       {'type': "network_out", 'unit': "B"})
+        rv = self.app.get('/probes/gw-switch/network_in/')
+        a = {u'network_in': {
+            u'%s.gw-switch' % self.site: {
+                u'timestamp': t,
+                u'type': u'network_in',
+                u'value': 1,
+                u'unit': u'B'}}}
+        b = json.loads(rv.data)
+        self.assertDictEqual(a, b)
+        rv = self.app.get('/probes/gw-switch/network_out/')
+        a = {u'network_out': {
+            u'%s.gw-switch' % self.site: {
+                u'timestamp': t,
+                u'type': u'network_out',
+                u'value': 2,
+                u'unit': u'B'}}}
+        b = json.loads(rv.data)
+        self.assertDictEqual(a, b)
 
 if __name__ == '__main__':
     unittest.main()
