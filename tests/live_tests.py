@@ -96,6 +96,11 @@ class HDF5TestCase(unittest.TestCase):
         rv = self.app.get("/energy/last/minute/")
         self.assertIn("200", rv.status)
         self.assertIn(self.site, rv.data)
+        rv = self.app.get("/network/last/minute/")
+        self.assertIn("200", rv.status)
+        self.assertIn("network", rv.data)
+        rv = self.app.get("/foo/last/minute/")
+        self.assertIn("404", rv.status)
 
 if __name__ == '__main__':
     unittest.main()
