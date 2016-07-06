@@ -1,6 +1,5 @@
 import os
 import kwapi.plugins.hdf5.app as app
-import kwapi.plugins.hdf5.hdf5_collector as h5c
 import unittest
 import tempfile
 import time
@@ -8,7 +7,6 @@ import json
 import socket
 import shutil
 import errno
-import collections
 
 
 def stringtojson(rv):
@@ -23,6 +21,11 @@ def stringtojson(rv):
 
 
 class HDF5TestCase(unittest.TestCase):
+    def add_value(self, probe, probes_names, data_type, timestamp, metrics,
+                  params):
+        return self.h5c.update_hdf5(probe, probes_names, data_type,
+                               timestamp, metrics, params)
+
     def setUp(self):
         self.log_file_fd, app.cfg.CONF.log_file = tempfile.mkstemp()
         app.cfg.CONF.hdf5_dir = tempfile.mkdtemp()
@@ -34,18 +37,46 @@ class HDF5TestCase(unittest.TestCase):
         app.cfg.CONF.split_weeks = 0
         app.cfg.CONF.split_months = 1
         my_app = app.make_app()
-        self.storePower = my_app.storePower
-        self.storeNetworkIn = my_app.storeNetworkIn
-        self.storeNetworkOut = my_app.storeNetworkOut
         self.app = my_app.test_client()
         self.site = socket.getfqdn().split('.')
         self.site = self.site[1] if len(self.site) >= 2 else self.site[0]
+        self.h5c = app.hdf5_collector
+
+    def add_data(self, t=int(time.time())):
+        probe = "%s.%s" % (self.site, "bar-1")
+        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
+        switch = "%s.%s.%d" % (self.site, "switch", 1)
+        self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
+        self.add_value(switch, [probe], 'network_in', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        self.add_value(switch, [probe], 'network_out', t, 1,
+                       {'type': "network_in", 'unit': "B"})
 
     def tearDown(self):
-        os.close(self.log_file_fd)
-        os.unlink(app.cfg.CONF.log_file)
-        os.close(self.endpoint_fd)
-        os.unlink(app.cfg.CONF.probes_endpoint[0][6:])
+        # Kill collector threads
+        try:
+            app.signal_handler(None, None)
+        except SystemExit:
+            print "Exit correctly"
+        except Exception as e:
+            print "Error when exiting app: %s" % e
+        try:
+            self.h5c.clear_probes(self.h5c)
+        except Exception as e:
+            print "Error when clear probe set: %s" % e
+        try:
+            self.storePower = None
+            self.storeNetworkIn = None
+            self.storeNetworkOut = None
+        except Exception as e:
+            print "Error when removing stores: %s" % e
+        try:
+            os.close(self.log_file_fd)
+            os.unlink(app.cfg.CONF.log_file)
+            os.close(self.endpoint_fd)
+            os.unlink(app.cfg.CONF.probes_endpoint[0][6:])
+        except Exception as e:
+            print "Error when cleaning tmp files: %s" % e
         # Delete temporary HDF5 files
         try:
             shutil.rmtree(app.cfg.CONF.hdf5_dir)
@@ -54,20 +85,7 @@ class HDF5TestCase(unittest.TestCase):
             # (ok if directory has already been deleted)
             if e.errno != errno.ENOENT:
                 raise
-        # Kill collector threads
-        try:
-            app.signal_handler(None, None)
-        except SystemExit:
-            print "Exit correctly"
-        self.storePower = None
-        self.storeNetworkIn = None
-        self.storeNetworkOut = None
-        h5c.clear_probes()
-
-    def add_value(self, probe, probes_names, data_type, timestamp, metrics,
-                  params):
-        return h5c.update_hdf5(probe, probes_names, data_type,
-                                           timestamp, metrics, params)
+            print e
 
     def test_empty_root(self):
         rv = self.app.get("/", headers={"Accept": "grid5000"})
@@ -94,14 +112,7 @@ class HDF5TestCase(unittest.TestCase):
 
     def test_root(self):
         t = int(time.time())
-        probe = "%s.%s" % (self.site, "bar-1")
-        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
-        switch = "%s.%s.%d" % (self.site, "switch", 1)
-        self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
-        self.add_value(switch, [probe], 'network_in', t, 1,
-                       {'type': "network_in", 'unit': "B"})
-        self.add_value(switch, [probe], 'network_out', t, 1,
-                       {'type': "network_in", 'unit': "B"})
+        self.add_data(t)
         rv = self.app.get("/", headers={"Accept": "grid5000"})
         a = {
             u'items':
@@ -166,15 +177,7 @@ class HDF5TestCase(unittest.TestCase):
         self.assertDictEqual(a, stringtojson(rv))
 
     def test_metric(self):
-        t = int(time.time())
-        probe = "%s.%s" % (self.site, "bar-1")
-        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
-        switch = "%s.%s.%d" % (self.site, "switch", 1)
-        self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
-        self.add_value(switch, [probe], 'network_in', t, 1,
-                       {'type': "network_in", 'unit': "B"})
-        self.add_value(switch, [probe], 'network_out', t, 1,
-                       {'type': "network_in", 'unit': "B"})
+        self.add_data()
         rv = self.app.get('/power/', headers={"Accept": "grid5000"})
         a = {u'uid': u'power',
              u'links': [
@@ -203,15 +206,7 @@ class HDF5TestCase(unittest.TestCase):
 
     def test_metric_timeseries(self):
         t = int(time.time())
-        self.maxDiff = None
-        probe = "%s.%s" % (self.site, "bar-1")
-        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
-        switch = "%s.%s.%d" % (self.site, "switch", 1)
-        self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
-        self.add_value(switch, [probe], 'network_in', t, 1,
-                       {'type': "network_in", 'unit': "B"})
-        self.add_value(switch, [probe], 'network_out', t, 1,
-                       {'type': "network_in", 'unit': "B"})
+        self.add_data(t)
         rv = self.app.get('/power/timeseries/', headers={"Accept": "grid5000"})
         a = {u'items': [
             {u'from': t,
@@ -245,16 +240,7 @@ class HDF5TestCase(unittest.TestCase):
 
     def test_metric_timeseries_only(self):
         t = int(time.time())
-        self.maxDiff = None
-        probe = "%s.%s" % (self.site, "bar-1")
-        pdu = "%s.%s.%d" % (self.site, "pdu", 1)
-        switch = "%s.%s.%d" % (self.site, "switch", 1)
-        self.add_value(pdu, [probe], 'power', t, 1,
-                       {'type': "power", 'unit': "KW"})
-        self.add_value(switch, [probe], 'network_in', t, 1,
-                       {'type': "network_in", 'unit': "B"})
-        self.add_value(switch, [probe], 'network_out', t, 1,
-                       {'type': "network_in", 'unit': "B"})
+        self.add_data(t)
         rv = self.app.get('/power/timeseries/?only=bar-1', headers={"Accept": "grid5000"})
         a = {u'items': [
             {u'from': t-24*3600,
@@ -288,6 +274,28 @@ class HDF5TestCase(unittest.TestCase):
         # Round timestamp to 0.1
         b['items'][0]['timestamps'][0] = int(b['items'][0]['timestamps'][0]*10/10)
         self.assertDictEqual(a, b)
+
+    def test_content_type(self):
+        rv = self.app.get("/", headers={"Accept": "grid5000"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/vnd.fr.grid5000.api.Collection+json;level=1')
+        rv = self.app.get("/", headers={"Accept": "json"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/json')
+        t = int(time.time())
+        self.add_data(t)
+        rv = self.app.get('/power/', headers={"Accept": "grid5000"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/vnd.fr.grid5000.api.Metric+json;level=1')
+        rv = self.app.get("/power/", headers={"Accept": "json"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/json')
+        rv = self.app.get('/power/timeseries', headers={"Accept": "grid5000"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/vnd.fr.grid5000.api.Collection+json;level=1')
+        rv = self.app.get("/power/timeseries", headers={"Accept": "json"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/json')
 
 if __name__ == '__main__':
     unittest.main()
