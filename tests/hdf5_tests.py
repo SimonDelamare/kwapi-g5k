@@ -31,6 +31,7 @@ class HDF5TestCase(unittest.TestCase):
         app.cfg.CONF.hdf5_dir = tempfile.mkdtemp()
         self.endpoint_fd, probes_endpoint = tempfile.mkstemp()
         app.cfg.CONF.probes_endpoint = ["ipc://" + probes_endpoint]
+        app.cfg.CONF.chunk_size = 1
         # HDF5 dates
         app.cfg.CONF.start_date = "2014/11/01"
         app.cfg.CONF.split_days = 0
@@ -45,12 +46,12 @@ class HDF5TestCase(unittest.TestCase):
     def add_data(self, t=int(time.time())):
         probe = "%s.%s" % (self.site, "bar-1")
         pdu = "%s.%s.%d" % (self.site, "pdu", 1)
-        switch = "%s.%s.%d" % (self.site, "switch", 1)
+        switch = "%s.%s.%d-%d" % (self.site, "switch", 1, 1)
         self.add_value(pdu, [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
         self.add_value(switch, [probe], 'network_in', t, 1,
                        {'type': "network_in", 'unit': "B"})
         self.add_value(switch, [probe], 'network_out', t, 1,
-                       {'type': "network_in", 'unit': "B"})
+                       {'type': "network_out", 'unit': "B"})
 
     def tearDown(self):
         # Kill collector threads
@@ -148,7 +149,7 @@ class HDF5TestCase(unittest.TestCase):
                          {u'href': u'/sid/sites/%s' % self.site,
                           u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
                           u'rel': u'parent'}],
-                     u'available_on': [u'1.switch.%s.grid5000.fr' % self.site],
+                     u'available_on': [u'1-1.switch.%s.grid5000.fr' % self.site],
                      u'step': 1,
                      u'timeseries': [
                          {u'pdp_per_row': 1,
@@ -167,7 +168,7 @@ class HDF5TestCase(unittest.TestCase):
                          {u'href': u'/sid/sites/%s' % self.site,
                           u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
                           u'rel': u'parent'}],
-                     u'available_on': [u'1.switch.%s.grid5000.fr' % self.site],
+                     u'available_on': [u'1-1.switch.%s.grid5000.fr' % self.site],
                      u'step': 1,
                      u'timeseries': [
                          {u'pdp_per_row': 1,
@@ -192,6 +193,48 @@ class HDF5TestCase(unittest.TestCase):
                   u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
                   u'rel': u'parent'}],
              u'available_on': [u'1.pdu.%s.grid5000.fr' % self.site],
+             u'step': 1,
+             u'timeseries': [
+                 {u'pdp_per_row': 1,
+                  u'cf': u'LAST',
+                  u'xff': 0}],
+             u'type': u'metric'}
+        self.assertDictEqual(a, stringtojson(rv))
+        rv = self.app.get('/network_in/', headers={"Accept": "grid5000"})
+        a = {u'uid': u'network_in',
+             u'links': [
+                 {u'href': u'/sid/sites/%s/metrics/network_in' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                  u'rel': u'self'},
+                 {u'href': u'/sid/sites/%s/metrics/network_in/timeseries' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                  u'rel': u'collection',
+                  u'title': u'timeseries'},
+                 {u'href': u'/sid/sites/%s' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
+                  u'rel': u'parent'}],
+             u'available_on': [u'1-1.switch.%s.grid5000.fr' % self.site],
+             u'step': 1,
+             u'timeseries': [
+                 {u'pdp_per_row': 1,
+                  u'cf': u'LAST',
+                  u'xff': 0}],
+             u'type': u'metric'}
+        self.assertDictEqual(a, stringtojson(rv))
+        rv = self.app.get('/network_out/', headers={"Accept": "grid5000"})
+        a = {u'uid': u'network_out',
+             u'links': [
+                 {u'href': u'/sid/sites/%s/metrics/network_out' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
+                  u'rel': u'self'},
+                 {u'href': u'/sid/sites/%s/metrics/network_out/timeseries' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Collection+json;level=1',
+                  u'rel': u'collection',
+                  u'title': u'timeseries'},
+                 {u'href': u'/sid/sites/%s' % self.site,
+                  u'type': u'application/vnd.fr.grid5000.api.Site+json;level=1',
+                  u'rel': u'parent'}],
+             u'available_on': [u'1-1.switch.%s.grid5000.fr' % self.site],
              u'step': 1,
              u'timeseries': [
                  {u'pdp_per_row': 1,
@@ -315,6 +358,33 @@ class HDF5TestCase(unittest.TestCase):
         rv = self.app.get("/power/timeseries/?only=bar-1", headers={"Accept": "json"})
         self.assertEqual(rv.headers['Content-Type'],
                          'application/json')
+
+    def test_inter_switch(self):
+        """Test inter-switch links on the following topology
+        gw.site [1/1] <=> [1/2] switch.site
+        Traffic:
+        * from switch to gw: 1B
+        * from gw to switch: 2B
+        """
+        t = int(time.time())
+        probe = "%s.%s" % (self.site, "gw-switch")
+        switch = "%s.%s.%d-%d" % (self.site, "gw", 1, 1)
+        self.add_value(switch, [probe], 'network_in', t, 1,
+                       {'type': "network_in", 'unit': "B"})
+        self.add_value(switch, [probe], 'network_out', t, 2,
+                       {'type': "network_out", 'unit': "B"})
+        rv = self.app.get("/network_in", headers={"Accept": "grid5000"})
+        res = stringtojson(rv)
+        probes = [u'1-1.gw.%s.grid5000.fr' % self.site]
+        self.assertListEqual(probes, res["available_on"])
+        rv = self.app.get("/network_in/timeseries/?only=gw-switch",
+                          headers={"Accept": "grid5000"})
+        res = stringtojson(rv)
+        self.assertEqual(res["items"][0]["values"][0], 1)
+        rv = self.app.get("/network_out/timeseries/?only=gw-switch",
+                          headers={"Accept": "grid5000"})
+        res = stringtojson(rv)
+        self.assertEqual(res["items"][0]["values"][0], 2)
 
 if __name__ == '__main__':
     unittest.main()
