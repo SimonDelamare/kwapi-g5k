@@ -111,10 +111,11 @@ class LiveTestCase(unittest.TestCase):
         self.assertIn("404", rv.status)
 
     def test_empty_zip(self):
+        # Return an empty zip file
         rv = self.app.get("/zip/")
-        self.assertIn("404", rv.status)
+        self.assertIn("200", rv.status)
         rv = self.app.get("/zip/?probes=bar-1")
-        self.assertIn("404", rv.status)
+        self.assertIn("200", rv.status)
 
 if __name__ == '__main__':
     unittest.main()

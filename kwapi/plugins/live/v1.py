@@ -29,7 +29,7 @@ import flask
 from flask import flash
 from jinja2 import TemplateNotFound
 
-from kwapi.utils import cfg
+from kwapi.utils import cfg, log
 import live
 sites = []
 
@@ -46,6 +46,7 @@ web_opts = [
 ]
 
 cfg.CONF.register_opts(web_opts)
+LOG = log.getLogger(__name__)
 
 blueprint = flask.Blueprint('v1', __name__, static_folder='static')
 
@@ -173,7 +174,7 @@ def get_nodes(job, metric):
 @blueprint.route('/zip/')
 def send_zip():
     """Sends zip file."""
-    probes = flask.request.args.get('probes') 
+    probes = flask.request.args.get('probes', [])
     try:
         if probes:
             probes = probes.split(',')
@@ -188,12 +189,13 @@ def send_zip():
     scales = ['minute', 'hour', 'day', 'week', 'month', 'year']
     if len(probes) == 0:
         probes = flask.request.probes_network
-    if len(probes) == 0:
-        flask.abort(404)
     for metric in metrics:
         for probe in probes:
             try:
                 rrd_files = live.get_rrds_from_name(probe, metric)
+                if len(rrd_files) == 0:
+                    # No RRD to store in zip
+                    continue
                 for i in range(len(rrd_files)):
                     zip_file.write(rrd_files[i], '/rrd/%s_%s_%d.rrd' %(metric, probe.replace(".","-"), i))
                 for scale in scales:
@@ -229,8 +231,9 @@ def send_zip():
                                                probes,
                                                summary=True,
                                                zip_file=True)
-            zip_file.write(png_file_energy, '/png/summary-energy-' + scale + '.png')
-            os.unlink(png_file_energy)
+            if png_file_energy:
+                zip_file.write(png_file_energy, '/png/summary-energy-' + scale + '.png')
+                os.unlink(png_file_energy)
         except:
             continue
     for scale in scales:
@@ -241,8 +244,9 @@ def send_zip():
                                                 probes,
                                                 summary=True,
                                                 zip_file=True)
-            zip_file.write(png_file_network, '/png/summary-network-' + scale + '.png')
-            os.unlink(png_file_network)
+            if png_file_network:
+                zip_file.write(png_file_network, '/png/summary-network-' + scale + '.png')
+                os.unlink(png_file_network)
         except:
             continue
     return flask.send_file(tmp_file,

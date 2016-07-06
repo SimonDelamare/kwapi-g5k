@@ -258,6 +258,8 @@ def build_graph_energy_init(start, end, probes, summary, zip_file=False):
         multi_probes_selected = multi_probes_selected.union(find_multi_probe(probe, 'power'))
     probes_uid = list(multi_probes_selected)
 
+    if len(probes) == 0:
+        return None
     # Single probe and no summary
     if len(probes) == 1 and not summary and scale:
         png_file = get_png_filename(probes[0], "power", scale)
@@ -417,6 +419,9 @@ def build_graph_network_init(start, end, probes, summary, zip_file=False):
     probes_in = list(probes_in)
     probes_out = list(probes_out)
 
+    # Empty probes
+    if len(probes_in) == 0 or len(probes_out) == 0:
+        return None
     # Single probe and no summary
     if len(probes) == 1 and not summary and scale:
         png_file = get_png_filename(probes[0], "network_in", scale)
