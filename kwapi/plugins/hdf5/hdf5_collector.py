@@ -76,7 +76,6 @@ def update_hdf5(probe, probes_names, data_type, timestamp, metrics, params):
             probes_names_maps[data_type].add_edge(probe_name, probe)
         else:
             probes_names_maps[data_type] = nx.Graph()
-            print probes_names_maps, data_type, probe_name, probe
             probes_names_maps[data_type].add_edge(probe_name, probe)
     buffered_values[data_type].put((probe, timestamp, metrics))
     if probes_sets.get(data_type, None):
