@@ -274,6 +274,19 @@ class HDF5TestCase(unittest.TestCase):
         # Round timestamp to 0.1
         b['items'][0]['timestamps'][0] = int(b['items'][0]['timestamps'][0]*10/10)
         self.assertDictEqual(a, b)
+        # With wrong time
+        t = int(time.time())
+        rv = self.app.get('/power/timeseries/?only=bar-1&from=foo&to=fooo',
+                          headers={"Accept": "grid5000"})
+        a['items'][0]['from'] = t-24*3600
+        a['items'][0]['to'] = t
+        b = stringtojson(rv)
+        # Round of time value for easy testing...
+        b['items'][0]['from'] = int(b['items'][0]['from'])
+        b['items'][0]['to'] = int(b['items'][0]['to'])
+        # Round timestamp to 0.1
+        b['items'][0]['timestamps'][0] = int(b['items'][0]['timestamps'][0]*10/10)
+        self.assertDictEqual(a, b)
 
     def test_content_type(self):
         rv = self.app.get("/", headers={"Accept": "grid5000"})
@@ -294,6 +307,12 @@ class HDF5TestCase(unittest.TestCase):
         self.assertEqual(rv.headers['Content-Type'],
                          'application/vnd.fr.grid5000.api.Collection+json;level=1')
         rv = self.app.get("/power/timeseries", headers={"Accept": "json"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/json')
+        rv = self.app.get('/power/timeseries/?only=bar-1', headers={"Accept": "grid5000"})
+        self.assertEqual(rv.headers['Content-Type'],
+                         'application/vnd.fr.grid5000.api.Collection+json;level=1')
+        rv = self.app.get("/power/timeseries/?only=bar-1", headers={"Accept": "json"})
         self.assertEqual(rv.headers['Content-Type'],
                          'application/json')
 
