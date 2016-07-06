@@ -64,6 +64,7 @@ buffered_values = {
     "network_out": Queue(),
 }
 
+
 def update_hdf5(probe, probes_names, data_type, timestamp, metrics, params):
     """Updates HDF5 file associated with this probe."""
     if not data_type in buffered_values:
@@ -165,12 +166,12 @@ class HDF5_Collector:
         keys = self.measurements.keys()
         for probe in keys:
             zipped = map(list, zip(*self.measurements[probe]))
-            self.write_hdf5(probe,
-                            np.array(zipped[0]),  # Timestp
-                            np.array(zipped[1]))  # measures
+            if len(zipped) == 2:
+                self.write_hdf5(probe,
+                                np.array(zipped[0]),  # Timestp
+                                np.array(zipped[1]))  # measures
             del self.measurements[probe]
         buffered_values[self.data_type].task_done()
-
 
     def write_hdf5(self, probe, timestamps, measures):
         self.lock.acquire()
