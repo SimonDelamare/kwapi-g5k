@@ -90,13 +90,15 @@ def get_probe_path(probe):
     return "/%s/%s" % (site, host.replace('.', "__").replace('-', '_'))
 
 
-def clear_probes():
-    probes_names_maps = {}
-    probes_sets = {}
+def clear_probes(collector):
+    collector.probes_names_maps = {}
+    collector.probes_sets = {}
+
 
 class ProbeMeasures(IsDescription):
     timestamp = Float64Col()
     measure = Int64Col()
+
 
 class HDF5_Collector:
     """
