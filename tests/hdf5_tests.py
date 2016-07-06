@@ -8,6 +8,7 @@ import json
 import socket
 import shutil
 import errno
+import collections
 
 
 def stringtojson(rv):
@@ -89,7 +90,7 @@ class HDF5TestCase(unittest.TestCase):
              u'offset': 0,
              u'total': 0
              }
-        self.assertEqual(a, stringtojson(rv))
+        self.assertDictEqual(a, stringtojson(rv))
 
     def test_root(self):
         t = int(time.time())
@@ -162,7 +163,7 @@ class HDF5TestCase(unittest.TestCase):
                           u'cf': u'LAST',
                           u'xff': 0}],
                      u'type': u'metric'}]}
-        self.assertEqual(a, stringtojson(rv))
+        self.assertDictEqual(a, stringtojson(rv))
 
     def test_metric(self):
         t = int(time.time())
@@ -194,10 +195,11 @@ class HDF5TestCase(unittest.TestCase):
                   u'cf': u'LAST',
                   u'xff': 0}],
              u'type': u'metric'}
-        self.assertEqual(a, stringtojson(rv))
+        self.assertDictEqual(a, stringtojson(rv))
 
     def test_metric_timeseries(self):
         t = int(time.time())
+        self.maxDiff = None
         probe = "%s.%s" % (self.site, "bar-1")
         pdu = "%s.%s.%d" % (self.site, "pdu", 1)
         switch = "%s.%s.%d" % (self.site, "switch", 1)
@@ -218,7 +220,7 @@ class HDF5TestCase(unittest.TestCase):
                   u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
                   u'rel': u'parent'}],
              u'type': u'timeseries',
-             u'to': t+300,
+             u'to': t,
              u'values': [],
              u'timestamps': [],
              u'resolution': 1}],
@@ -231,7 +233,11 @@ class HDF5TestCase(unittest.TestCase):
                   u'type': u'application/vnd.fr.grid5000.api.Metric+json;level=1',
                   u'rel': u'parent'}],
              u'offset': 0}
-        self.assertEqual(a, stringtojson(rv))
+        b = stringtojson(rv)
+        # Round of time value for easy testing...
+        b['items'][0]['from'] = int(b['items'][0]['from'])
+        b['items'][0]['to'] = int(b['items'][0]['to'])
+        self.assertDictEqual(a, b)
 
 if __name__ == '__main__':
     unittest.main()
