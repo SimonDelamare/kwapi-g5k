@@ -9,7 +9,7 @@ import shutil
 import errno
 
 
-class HDF5TestCase(unittest.TestCase):
+class LiveTestCase(unittest.TestCase):
     def add_value(self, probe, probes_names, data_type, timestamp, metrics,
                   params):
         return self.live.update_probe(probe, probes_names, data_type,
