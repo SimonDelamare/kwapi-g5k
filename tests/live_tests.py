@@ -116,6 +116,9 @@ class LiveTestCase(unittest.TestCase):
         self.assertIn("200", rv.status)
         rv = self.app.get("/zip/?probes=bar-1")
         self.assertIn("200", rv.status)
+        self.add_data()
+        rv = self.app.get("/zip/?probes=bar-1")
+        self.assertIn("200", rv.status)
 
 if __name__ == '__main__':
     unittest.main()
