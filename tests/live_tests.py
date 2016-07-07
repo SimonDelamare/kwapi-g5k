@@ -1,6 +1,5 @@
 # coding=utf-8
 import os
-import kwapi.plugins.live.app as app
 import unittest
 import tempfile
 import time
@@ -64,14 +63,9 @@ class LiveTestCase(unittest.TestCase):
                                       timestamp, metrics, params)
 
     def setUp(self):
-        self.log_file_fd, app.cfg.CONF.log_file = tempfile.mkstemp()
-        app.cfg.CONF.hdf5_dir = tempfile.mkdtemp()
-        self.endpoint_fd, probes_endpoint = tempfile.mkstemp()
-        app.cfg.CONF.probes_endpoint = ["ipc://" + probes_endpoint]
-        app.cfg.CONF.rrd_port = 8080
         self.site = socket.getfqdn().split('.')
         self.site = self.site[1] if len(self.site) >= 2 else self.site[0]
-        app.cfg.CONF.g5k_sites = "['%s',]" % self.site
+
         job_json = self.job_api_json.format(node="bar-1", site=self.site,
                                             job_id=1, user="foo",
                                             start=int(time.time() - 3600),
@@ -82,6 +76,14 @@ class LiveTestCase(unittest.TestCase):
         patch("execo_g5k.api_utils").start()
         patch("execo_g5k.get_g5k_sites",
               return_value=["%s" % self.site]).start()
+        import kwapi.plugins.live.app as app
+        self.log_file_fd, app.cfg.CONF.log_file = tempfile.mkstemp()
+        app.cfg.CONF.hdf5_dir = tempfile.mkdtemp()
+        self.endpoint_fd, probes_endpoint = tempfile.mkstemp()
+        app.cfg.CONF.probes_endpoint = ["ipc://" + probes_endpoint]
+        app.cfg.CONF.rrd_port = 8080
+        app.cfg.CONF.g5k_sites = "['%s',]" % self.site
+
         # PNG and RRD directories
         app.cfg.CONF.png_dir = tempfile.mkdtemp()
         app.cfg.CONF.rrd_dir = tempfile.mkdtemp()
@@ -93,7 +95,7 @@ class LiveTestCase(unittest.TestCase):
         app.cfg.CONF.refresh_interval = 5
         app.cfg.CONF.size = 160
         app.cfg.CONF.verbose = True
-        self.appp = app
+        self.cfg = app.cfg
         self.live = app.live
         my_app = app.make_app()
         self.app = my_app.test_client()
@@ -113,7 +115,7 @@ class LiveTestCase(unittest.TestCase):
         patch.stopall()
         # Kill collector threads
         try:
-            app.signal_handler(None, None)
+            self.app.signal_handler(None, None)
         except SystemExit:
             print "Exit correctly"
         except Exception as e:
@@ -130,16 +132,16 @@ class LiveTestCase(unittest.TestCase):
             print "Error when removing stores: %s" % e
         try:
             os.close(self.log_file_fd)
-            os.unlink(app.cfg.CONF.log_file)
+            os.unlink(self.cfg.CONF.log_file)
             os.close(self.endpoint_fd)
-            os.unlink(app.cfg.CONF.probes_endpoint[0][6:])
+            os.unlink(self.cfg.CONF.probes_endpoint[0][6:])
         except Exception as e:
             print "Error when cleaning tmp files: %s" % e
         # Delete temporary HDF5 files
         try:
-            shutil.rmtree(app.cfg.CONF.hdf5_dir)
-            shutil.rmtree(app.cfg.CONF.rrd_dir)
-            shutil.rmtree(app.cfg.CONF.png_dir)
+            shutil.rmtree(self.cfg.CONF.hdf5_dir)
+            shutil.rmtree(self.cfg.CONF.rrd_dir)
+            shutil.rmtree(self.cfg.CONF.png_dir)
         except OSError as e:
             # Reraise unless ENOENT: No such file or directory
             # (ok if directory has already been deleted)
