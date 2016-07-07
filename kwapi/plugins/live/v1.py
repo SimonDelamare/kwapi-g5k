@@ -260,11 +260,11 @@ def send_zip():
 def send_summary_graph(metric,start, end):
     """Sends summary graph."""
     probes_list = []
-    if metric == 'energy':                                                     
-        probes_list = flask.request.probes_power                                    
-    elif metric == 'network':                                                  
-        probes_list = flask.request.probes_network                                  
-    else:                                                                      
+    if metric == 'energy':
+        probes_list = flask.request.probes_power
+    elif metric == 'network':
+        probes_list = flask.request.probes_network
+    else:
         flask.abort(404) 
     probes = flask.request.args.get('probes')
     if probes:
