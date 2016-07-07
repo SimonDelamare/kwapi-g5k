@@ -11,6 +11,52 @@ from mock import patch, call
 
 
 class LiveTestCase(unittest.TestCase):
+    job_api_json = """{{
+      "uid": {job_id},
+      "user_uid": "{user}",
+      "user": "{user}",
+      "walltime": 3600,
+      "queue": "default",
+      "state": "terminated",
+      "project": "default",
+      "types": [
+        "deploy"
+      ],
+      "mode": "INTERACTIVE",
+      "command": "",
+      "submitted_at": {start},
+      "started_at": {start},
+      "stopped_at": {stop},
+      "message": "FIFO scheduling OK",
+      "properties": "((deploy = 'YES') AND maintenance = 'NO') AND production = 'NO'",
+      "directory": "/home/{user}",
+      "events": [
+      ],
+      "links": [
+        {{
+          "rel": "self",
+          "href": "/sid/sites/{site}/jobs/{job_id}",
+          "type": "application/vnd.grid5000.item+json"
+        }},
+        {{
+          "rel": "parent",
+          "href": "/sid/sites/{site}",
+          "type": "application/vnd.grid5000.item+json"
+        }}
+      ],
+      "resources_by_type": {{
+        "cores": [
+          "{node}.{site}.grid5000.fr",
+          "{node}.{site}.grid5000.fr",
+          "{node}.{site}.grid5000.fr",
+          "{node}.{site}.grid5000.fr"
+        ]}}
+      }},
+      "assigned_nodes": [
+        "{node}.{site}.grid5000.fr"
+      ]
+    }}"""
+
     def add_value(self, probe, probes_names, data_type, timestamp, metrics,
                   params):
         return self.live.update_probe(probe, probes_names, data_type,
@@ -25,6 +71,12 @@ class LiveTestCase(unittest.TestCase):
         self.site = socket.getfqdn().split('.')
         self.site = self.site[1] if len(self.site) >= 2 else self.site[0]
         app.cfg.CONF.g5k_sites = "['%s',]" % self.site
+        job_json = self.job_api_json.format(node="bar-1", site=self.site,
+                                            job_id=1, user="foo",
+                                            start=int(time.time() - 3600),
+                                            stop=int(time.time()))
+
+        patch("execo_g5k.api_utils", return_value=job_json).start()
         # PNG and RRD directories
         app.cfg.CONF.png_dir = tempfile.mkdtemp()
         app.cfg.CONF.rrd_dir = tempfile.mkdtemp()
@@ -52,6 +104,7 @@ class LiveTestCase(unittest.TestCase):
                        {'type': "network_out", 'unit': "B"})
 
     def tearDown(self):
+        patch.stopall()
         # Kill collector threads
         try:
             app.signal_handler(None, None)
