@@ -7,6 +7,7 @@ import time
 import socket
 import shutil
 import errno
+from mock import patch, call
 
 
 class LiveTestCase(unittest.TestCase):
@@ -35,7 +36,7 @@ class LiveTestCase(unittest.TestCase):
         app.cfg.CONF.refresh_interval = 5
         app.cfg.CONF.size = 160
         app.cfg.CONF.verbose = True
-
+        self.appp = app
         self.live = app.live
         my_app = app.make_app()
         self.app = my_app.test_client()
@@ -119,6 +120,48 @@ class LiveTestCase(unittest.TestCase):
         self.add_data()
         rv = self.app.get("/zip/")
         self.assertIn("200", rv.status)
+
+    def test_empty_metric_sum_graph(self):
+        t = time.time()
+        rv = self.app.get("/foo/summary-graph/%d/%d/" % (t-300, t))
+        self.assertIn("404", rv.status)
+        rv = self.app.get("/energy/summary-graph/%d/%d/" % (t-300, t))
+        self.assertIn("404", rv.status)
+        rv = self.app.get("/network/summary-graph/%d/%d/" % (t-300, t))
+        self.assertIn("404", rv.status)
+        rv = self.app.get("/energy/summary-graph/%d/%d/?probes=bar-1" % (t-300, t))
+        self.assertIn("404", rv.status)
+
+    def test_metric_sum_graph(self):
+        self.add_data()
+        t = time.time()
+        with tempfile.NamedTemporaryFile(suffix='.rrd') as probe_rrd:
+            shutil.copy2("tests/rrds/bar-1.rrd", probe_rrd.name)
+            with patch("kwapi.plugins.live.live.get_rrd_filename",
+                       return_value=probe_rrd.name) as m:
+                # Fail with 404 if unknown metric
+                rv = self.app.get("/foo/summary-graph/%d/%d/" % (t-300, t))
+                self.assertIn("404", rv.status)
+                m.reset_mock()
+                # Return power 5m summary graph
+                rv = self.app.get("/energy/summary-graph/%d/%d/" % (t-300, t))
+                self.assertIn("200", rv.status)
+                m.assert_called_once_with("%s.pdu.1" % self.site, "power")
+                m.reset_mock()
+                rv = self.app.get("/network/summary-graph/%d/%d/" % (t-300, t))
+                self.assertIn("200", rv.status)
+                calls = [call("%s.switch.1-1" % self.site, "network_out"),
+                         call("%s.switch.1-1" % self.site, "network_in")]
+                m.assert_has_calls(calls)
+                m.reset_mock()
+                rv = self.app.get("/energy/summary-graph/%d/%d/?probes=cacahuete.bar-1" % (t-300, t))
+                self.assertIn("200", rv.status)
+                m.assert_called_once_with("%s.pdu.1" % self.site, "power")
+                m.reset_mock()
+                rv = self.app.get("/network/summary-graph/%d/%d/?probes=cacahuete.bar-1" % (t - 300, t))
+                self.assertIn("200", rv.status)
+                m.assert_has_calls(calls)
+                m.reset_mock()
 
 if __name__ == '__main__':
     unittest.main()
