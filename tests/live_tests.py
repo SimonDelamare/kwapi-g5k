@@ -74,7 +74,7 @@ class LiveTestCase(unittest.TestCase):
         patch("kwapi.plugins.live.v1.get_resource_attributes",
               return_value=json.loads(job_json)).start()
         patch("execo_g5k.api_utils").start()
-        patch("execo_g5k.get_g5k_sites",
+        patch("kwapi.plugins.live.app.get_g5k_sites",
               return_value=["%s" % self.site]).start()
         import kwapi.plugins.live.app as app
         self.log_file_fd, app.cfg.CONF.log_file = tempfile.mkstemp()
