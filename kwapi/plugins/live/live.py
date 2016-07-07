@@ -31,9 +31,6 @@ import rrdtool
 from kwapi.plugins.rrd.rrd import get_rrd_filename, get_png_filename
 
 from kwapi.utils import cfg, log
-from socket import getfqdn
-from execo_g5k.topology import g5k_graph
-from execo_g5k import get_host_attributes, get_resource_attributes
 import networkx as nx
 
 LOG = log.getLogger(__name__)
