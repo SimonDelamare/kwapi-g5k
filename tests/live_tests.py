@@ -219,14 +219,14 @@ class LiveTestCase(unittest.TestCase):
                 m.assert_has_calls(calls)
                 m.reset_mock()
                 rv = self.app.get(
-                    "/energy/summary-graph/%d/%d/?probes=cacahuete.bar-1" % (
-                    t - 300, t))
+                    "/energy/summary-graph/%d/%d/?probes=%s.bar-1"
+                    % (t - 300, t, self.site))
                 self.assertIn("200", rv.status, "Probe power metric summary")
                 m.assert_called_once_with("%s.pdu.1" % self.site, "power")
                 m.reset_mock()
                 rv = self.app.get(
-                    "/network/summary-graph/%d/%d/?probes=cacahuete.bar-1" % (
-                    t - 300, t))
+                    "/network/summary-graph/%d/%d/?probes=%s.bar-1"
+                    % (t - 300, t, self.site))
                 self.assertIn("200", rv.status, "Probe net metric summary")
                 m.assert_has_calls(calls)
                 m.reset_mock()
