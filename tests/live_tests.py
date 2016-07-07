@@ -203,17 +203,17 @@ class LiveTestCase(unittest.TestCase):
                        return_value=probe_rrd.name) as m:
                 # Fail with 404 if unknown metric
                 rv = self.app.get("/foo/summary-graph/%d/%d/" % (t - 300, t))
-                self.assertIn("404", rv.status)
+                self.assertIn("404", rv.status, "Unknown metric should fail")
                 m.reset_mock()
                 # Return power 5m summary graph
                 rv = self.app.get(
                     "/energy/summary-graph/%d/%d/" % (t - 300, t))
-                self.assertIn("200", rv.status)
+                self.assertIn("200", rv.status, "Power metric summary")
                 m.assert_called_once_with("%s.pdu.1" % self.site, "power")
                 m.reset_mock()
                 rv = self.app.get(
                     "/network/summary-graph/%d/%d/" % (t - 300, t))
-                self.assertIn("200", rv.status)
+                self.assertIn("200", rv.status, "Network metric summary")
                 calls = [call("%s.switch.1-1" % self.site, "network_out"),
                          call("%s.switch.1-1" % self.site, "network_in")]
                 m.assert_has_calls(calls)
@@ -221,13 +221,13 @@ class LiveTestCase(unittest.TestCase):
                 rv = self.app.get(
                     "/energy/summary-graph/%d/%d/?probes=cacahuete.bar-1" % (
                     t - 300, t))
-                self.assertIn("200", rv.status)
+                self.assertIn("200", rv.status, "Probe power metric summary")
                 m.assert_called_once_with("%s.pdu.1" % self.site, "power")
                 m.reset_mock()
                 rv = self.app.get(
                     "/network/summary-graph/%d/%d/?probes=cacahuete.bar-1" % (
                     t - 300, t))
-                self.assertIn("200", rv.status)
+                self.assertIn("200", rv.status, "Probe net metric summary")
                 m.assert_has_calls(calls)
                 m.reset_mock()
 
