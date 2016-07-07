@@ -79,6 +79,7 @@ class LiveTestCase(unittest.TestCase):
 
         patch("kwapi.plugins.live.v1.get_resource_attributes",
               return_value=json.loads(job_json)).start()
+        patch("execo_g5k.api_utils").start()
         # PNG and RRD directories
         app.cfg.CONF.png_dir = tempfile.mkdtemp()
         app.cfg.CONF.rrd_dir = tempfile.mkdtemp()
