@@ -76,7 +76,7 @@ class LiveTestCase(unittest.TestCase):
                                             start=int(time.time() - 3600),
                                             stop=int(time.time()))
 
-        patch("execo_g5k.api_utils", return_value=job_json).start()
+        patch("execo_g5k.api_utils.get_resource_attributes", return_value=job_json).start()
         # PNG and RRD directories
         app.cfg.CONF.png_dir = tempfile.mkdtemp()
         app.cfg.CONF.rrd_dir = tempfile.mkdtemp()
