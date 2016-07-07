@@ -231,6 +231,13 @@ class LiveTestCase(unittest.TestCase):
                 m.assert_has_calls(calls)
                 m.reset_mock()
 
+    def test_job_metric(self):
+        rv = self.app.get('/nodes/1/energy/')
+        self.assertEqual("bar-1.%s.grid5000.fr" % self.site,
+                         json.loads(rv.data)["nodes"][0])
+        rv = self.app.get('/nodes/1/network/')
+        self.assertEqual("bar-1.%s.grid5000.fr" % self.site,
+                         json.loads(rv.data)["nodes"][0])
 
 if __name__ == '__main__':
     unittest.main()
