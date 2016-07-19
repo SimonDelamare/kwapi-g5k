@@ -1,4 +1,4 @@
-execo>=2.3
+execo>=2.5.4
 cython>=0.13
 numpy<1.7
 numexpr>=2.0.0
