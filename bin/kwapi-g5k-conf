@@ -103,15 +103,13 @@ except Exception as e:
 logger.info('Retrieving network equipments information')
 switchs = {}
 g = topology.g5k_graph(site)
-switches_cluster = [x[0] for x in filter(lambda n: n[1]['kind'] in ['switch', 'router'], g.nodes(True))]
-logger.info("switchs %s" % switches_cluster)
+switches_cluster = [x[0] for x in filter(lambda n: n[1]['kind'] in ['switch', 'router', 'virtual', 'other'], g.nodes(True))]
 hosts_cluster = set(g.nodes()) - set(switches_cluster)
 
 try:
     for network_equipment in get_site_network_equipments(site):
         network_equipment = get_network_equipment_attributes(network_equipment)
         switch = network_equipment.get("uid", None)
-        logger.info("switch %s" % switch)
         switch_uid = to_long_uid(switch, site)
         if (switch_uid in switches_cluster or switch in switches_cluster):
             # Iter on switch linecards/ports
@@ -138,22 +136,17 @@ try:
                     port_name = snmp_pattern.replace('%LINECARD%', str(l)).replace('%PORT%', str(p))
                     port_uid = "%d-%d" % (l, p)
                     if host_uid:
-                        logger.info("host uid %s" % host_uid)
-                        logger.info("s_key ? %s" % switchs.has_key(switch))
                         if switchs.has_key(switch):
-                            logger.info("YES")
                             if switchs.has_key(port_name):
                                 logger.error('Collision on switch %s port %s host %s'
                                              % (switch, port_name, host_uid))
                             switchs[switch][port_name] = (device, port_uid)
                         else:
-                            logger.info("NO")
                             switchs[switch] = {}
                             switchs[switch][port_name] = (device, port_uid)
                     #except:
                     #    logger.error("Can't write %s:%s:%d:%d:%s" % (switch, snmp_pattern, l, p, host_uid))
 
-    pprint(switchs)
 except Exception as e:
     logger.error('Failed to retrieve network monitoring')
     logger.error('%s' % e)
@@ -245,8 +238,13 @@ network_probes = {}
 topo = {}
 try:
     for switch in switchs:
-        ifDescr_list = retrieve_switch_if(switch)
-        probes = [None] * len(ifDescr_list)
+        probes = [None]
+        try:
+            ifDescr_list = retrieve_switch_if(switch)
+            probes = [None] * len(ifDescr_list)
+        except:
+            logger.error('Failed to retrieve switch info via SNMP: %s' % switch)
+            continue
         for port_name in switchs[switch]:
             if not port_name in ifDescr_list:
                 logger.error("Port %s not found in %s" % (port_name, switch))
@@ -257,16 +255,17 @@ try:
             if len(probes) == 0:
                 break
         switch_probes[switch] = probes
-except:
-    logger.error('Failed to generate probe list')
-try:
-    for switch in switchs:
+except Exception as e:
+    logger.error('Failed to generate probe list: %s' % e)
+
+for switch in switchs:
+    try:
         probes_uid = format_probes(switch_probes[switch], switch, site, False)
         probes_names = format_probes(switch_probes[switch], switch, site, True)
 	network_probes[switch] = {'uid':probes_uid[1:],
 				  'names':probes_names[1:],}
-except:
-    logger.error('Failed to generate topology and network mapping')
+    except:
+        logger.error('Failed to generation configuration for %s' % switch)
 # pprint(topo)
 # pprint(equips)
 # pprint(network_probes)
