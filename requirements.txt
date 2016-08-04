@@ -4,7 +4,7 @@ numpy<1.7
 numexpr>=2.0.0
 d2to1>=0.2.10,<0.3
 eventlet
-flask
+flask>=0.10.1
 h5py
 iso8601
 kombu
