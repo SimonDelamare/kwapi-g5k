@@ -195,6 +195,7 @@ def send_zip():
                 rrd_files = live.get_rrds_from_name(probe, metric)
                 if len(rrd_files) == 0:
                     # No RRD to store in zip
+                    LOG.error("No RRD for %s, %s" % (metric, probe))
                     continue
                 for i in range(len(rrd_files)):
                     zip_file.write(rrd_files[i], '/rrd/%s_%s_%d.rrd' %(metric, probe.replace(".","-"), i))
@@ -220,7 +221,8 @@ def send_zip():
                         os.unlink(png_file)
                     else:
                         continue
-            except:
+            except Exception as e:
+                LOG.error("Fail to add %s: %s" % (probe, e))
                 continue
     # Generate summary
     for scale in scales:
@@ -234,7 +236,8 @@ def send_zip():
             if png_file_energy:
                 zip_file.write(png_file_energy, '/png/summary-energy-' + scale + '.png')
                 os.unlink(png_file_energy)
-        except:
+        except Exception as e:
+            LOG.error("Fail to add energy %s, %s: %s" % (probes, scale, e))
             continue
     for scale in scales:
         try:
@@ -247,7 +250,8 @@ def send_zip():
             if png_file_network:
                 zip_file.write(png_file_network, '/png/summary-network-' + scale + '.png')
                 os.unlink(png_file_network)
-        except:
+        except Exception as e:
+            LOG.error("Fail to add network %s, %s: %s" % (probes, scale, e))
             continue
     return flask.send_file(tmp_file,
                            as_attachment=True,
