@@ -8,7 +8,7 @@
 from socket import getfqdn
 from pprint import pprint
 from execo import Process, logger
-from execo_g5k import get_site_clusters, get_cluster_hosts, get_host_attributes, get_resource_attributes, topology, config, get_site_network_equipments, get_network_equipment_attributes
+from execo_g5k import get_site_clusters, get_cluster_hosts, get_host_attributes, get_resource_attributes, topology, config, get_site_network_equipments, get_network_equipment_attributes, get_site_hosts
 import re
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
@@ -21,7 +21,6 @@ _output_dir = '/etc/kwapi'
 hostname = getfqdn().split('.')
 site = hostname[1] if len(hostname) > 2 else hostname[0]
 # site = 'lyon'
-config.g5k_configuration["api_additional_args"] = ["branch=testing"]
 
 def to_long_uid(uid, site):
     if uid:
@@ -57,9 +56,7 @@ def retrieve_switch_if(switch):
             return ifDescr_list
 
 def format_host_name(host):
-    # Since last execo version, no more formatting
-    # is needed for renater link
-    return host
+    return re.sub(r"renater(-.*)", "renater", host)
 
 def format_host_port(port):
     return '-' + port.replace("/", "").replace(":", "")
@@ -102,50 +99,47 @@ except Exception as e:
 
 logger.info('Retrieving network equipments information')
 switchs = {}
-g = topology.g5k_graph(site)
-switches_cluster = [x[0] for x in filter(lambda n: n[1]['kind'] in ['switch', 'router', 'virtual', 'other'], g.nodes(True))]
-hosts_cluster = set(g.nodes()) - set(switches_cluster)
+hosts_cluster = get_site_hosts(site, queues=None)+[u"renater"]
 
 try:
     for network_equipment in get_site_network_equipments(site):
         network_equipment = get_network_equipment_attributes(network_equipment)
         switch = network_equipment.get("uid", None)
         switch_uid = to_long_uid(switch, site)
-        if (switch_uid in switches_cluster or switch in switches_cluster):
-            # Iter on switch linecards/ports
-            l = -1
-            for linecard in network_equipment.get('linecards', []):
-                l+=1
-                snmp_pattern = linecard.get('snmp_pattern', None)
-                if not snmp_pattern:
-                    logger.warn("No snmp_pattern for %s: %s" % (switch, l))
-                    continue
-                p = -1
-                for port in linecard.get('ports',[]):
-                    p+=1
-                    host_uid = None
-                    device_port = ""
-                    if port.has_key('uid'):
-                        host_uid = format_host_name(port['uid'])
-                        if port.has_key('port'):
-                            device_port = format_host_port(port['port'])
-                            #if not (to_long_uid(host_uid, site) in hosts_cluster or host_uid in hosts_cluster):
-                            #    host_uid = None
-                    #try:
-                    device = host_uid + device_port if host_uid else None
-                    port_name = snmp_pattern.replace('%LINECARD%', str(l)).replace('%PORT%', str(p))
-                    port_uid = "%d-%d" % (l, p)
-                    if host_uid:
-                        if switchs.has_key(switch):
-                            if switchs.has_key(port_name):
-                                logger.error('Collision on switch %s port %s host %s'
-                                             % (switch, port_name, host_uid))
-                            switchs[switch][port_name] = (device, port_uid)
-                        else:
-                            switchs[switch] = {}
-                            switchs[switch][port_name] = (device, port_uid)
-                    #except:
-                    #    logger.error("Can't write %s:%s:%d:%d:%s" % (switch, snmp_pattern, l, p, host_uid))
+        # Iter on switch linecards/ports
+        l = -1
+        for linecard in network_equipment.get('linecards', []):
+            l+=1
+            snmp_pattern = linecard.get('snmp_pattern', None)
+            if not snmp_pattern:
+                logger.warn("No snmp_pattern for %s: %s" % (switch, l))
+                continue
+            p = -1
+            for port in linecard.get('ports',[]):
+                p+=1
+                host_uid = None
+                device_port = ""
+                if port.has_key('uid'):
+                    host_uid = format_host_name(port['uid'])
+                    if port.has_key('port'):
+                        device_port = format_host_port(port['port'])
+                    if not (to_long_uid(host_uid, site) in hosts_cluster or host_uid in hosts_cluster):
+                        host_uid = "%s_%s" % (switch, host_uid)
+                #try:
+                device = host_uid + device_port if host_uid else None
+                port_name = snmp_pattern.replace('%LINECARD%', str(l)).replace('%PORT%', str(p))
+                port_uid = "%d-%d" % (l, p)
+                if host_uid:
+                    if switchs.has_key(switch):
+                        if switchs.has_key(port_name):
+                            logger.error('Collision on switch %s port %s host %s'
+                                         % (switch, port_name, host_uid))
+                        switchs[switch][port_name] = (device, port_uid)
+                    else:
+                        switchs[switch] = {}
+                        switchs[switch][port_name] = (device, port_uid)
+                #except:
+                #    logger.error("Can't write %s:%s:%d:%d:%s" % (switch, snmp_pattern, l, p, host_uid))
 
 except Exception as e:
     logger.error('Failed to retrieve network monitoring')
