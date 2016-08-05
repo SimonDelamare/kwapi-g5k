@@ -44,6 +44,7 @@ class Snmp(Driver):
     def run(self):
         """Starts the driver thread."""
         while not self.stop_request_pending():
+            req_time = time.time()
             measure_time = time.time()
             metrics_list = self.get_metrics()
             #Sum duplicate probes metrics in a specific dictionnary
@@ -74,7 +75,7 @@ class Snmp(Driver):
 							     measure_time,
 							     agg_value)
 		     self.send_measurements(probe, measurements)
-            time.sleep(self.kwargs.get('resolution', 1))
+            time.sleep(max(0, self.kwargs.get('resolution', 1)-(time.time()-req_time)))
 
     def get_metrics(self):
         """Returns the OID field."""

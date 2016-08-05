@@ -40,6 +40,7 @@ class Json_url(Driver):
     def run(self):
         """Starts the driver thread."""
         while not self.stop_request_pending():
+            req_time = time.time()
             json_content = json.load(urllib2.urlopen(self.kwargs.get('url')))
             for i in range(len(self.probes_names)):
                 probe = json_content.get(self.probes_names[i][0].split('.')[1])
@@ -49,6 +50,6 @@ class Json_url(Driver):
                                                             probe['timestamp'],
                                                             probe['watt'])
                     self.send_measurements(self.probe_ids[i], measurements)
-            time.sleep(1)
+            time.sleep(max(0, 1-(time.time()-req_time)))
 
 

@@ -42,13 +42,14 @@ class Ipmi(Driver):
         """Starts the driver thread."""
         if self.set_sensor_name():
             while not self.stop_request_pending():
+                req_time = time.time()
                 watts = self.get_watts()
                 if watts is not None:
                     measure_time = time.time()
                     measurements = self.create_measurements(self.probe_ids[0],
                             measure_time, watts)
                     self.send_measurements(self.probe_ids[0], measurements)
-                time.sleep(1)
+                time.sleep(max(0, 1-(time.time()-req_time)))
 
     def set_sensor_name(self):
         """Deduces the sensors name from the IPMI listing, or loads it from

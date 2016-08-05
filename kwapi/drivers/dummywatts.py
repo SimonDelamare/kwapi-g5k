@@ -40,6 +40,7 @@ class DummyWatts(Driver):
     def run(self):
         """Starts the driver thread."""
         while not self.stop_request_pending():
+            req_time = time.time()
             measure_time = time.time()
             for probe_id in self.probe_ids :
                 if not probe_id:
@@ -48,4 +49,4 @@ class DummyWatts(Driver):
                                measure_time,
                                int(randrange(self.min_value, self.max_value+1)))
                 self.send_measurements(probe_id, measurements)
-            time.sleep(1)
+            time.sleep(max(0, 1-(time.time()-req_time)))
