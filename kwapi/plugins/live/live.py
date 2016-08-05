@@ -305,7 +305,7 @@ def build_graph_energy(start, end, probes, probes_name, summary, cachable, png_f
              '--alt-y-grid',
              '--vertical-label', 'Watts',
              '--lower-limit', '0',
-             '--rigid',
+             '--slope-mode',
              ]
     if end - start <= 300:
         args += ['--x-grid', 'SECOND:30:MINUTE:1:MINUTE:1:0:%H:%M']
@@ -457,7 +457,6 @@ def build_graph_network(start, end, probes, probes_in, probes_out, summary, cach
                 '--title', str(probes[0]) + scale_label,
                 '--width', '497',
                 '--height', '187',
-                #'--upper-limit', str(cfg.CONF.max_metrics),
                 ]
     # Common arguments
     args += ['--start', str(start),
@@ -466,9 +465,8 @@ def build_graph_network(start, end, probes, probes_in, probes_out, summary, cach
              '--imgformat', 'PNG',
              '--alt-y-grid',
              '--vertical-label', 'bits/s',
-             #'--lower-limit', '0',
-             #'--rigid',
              '--base', '1000',
+             '--slope-mode',
              ]
     if end - start <= 300:
         args += ['--x-grid', 'SECOND:30:MINUTE:1:MINUTE:1:0:%H:%M']
