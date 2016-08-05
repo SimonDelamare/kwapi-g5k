@@ -3,3 +3,18 @@ include CONTRIBUTING.rst
 exclude .gitignore
 exclude .gitreview
 global-exclude *.pyc
+include kwapi/plugins/live/templates/*
+include kwapi/plugins/live/static/*.css
+include kwapi/plugins/live/static/*.png
+include kwapi/plugins/live/static/*.jpg
+include kwapi/plugins/live/static/*.gif
+include kwapi/plugins/live/static/*.js
+include kwapi/plugins/live/static/select2/*
+include kwapi/plugins/rrd/templates/*
+include kwapi/plugins/rrd/static/*.css
+include kwapi/plugins/rrd/static/*.png
+include kwapi/plugins/rrd/static/*.jpg
+include kwapi/plugins/rrd/static/*.gif
+include kwapi/plugins/rrd/static/*.js
+include kwapi/plugins/rrd/static/select2/*
+
