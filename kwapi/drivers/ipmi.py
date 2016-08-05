@@ -26,7 +26,7 @@ LOG = log.getLogger(__name__)
 class Ipmi(Driver):
     """Driver for IPMI cards."""
 
-    def __init__(self, probe_ids, probe_data_type, **kwargs):
+    def __init__(self, probe_ids, probes_names, probe_data_type, **kwargs):
         """Initializes the IPMI driver.
 
         Keyword arguments:
@@ -36,19 +36,20 @@ class Ipmi(Driver):
                   password) defining the IPMI parameters
 
         """
-        Driver.__init__(self, probe_ids, probe_data_type, kwargs)
+        Driver.__init__(self, probe_ids, probes_names, probe_data_type, kwargs)
 
     def run(self):
         """Starts the driver thread."""
         if self.set_sensor_name():
             while not self.stop_request_pending():
                 req_time = time.time()
-                watts = self.get_watts()
-                if watts is not None:
-                    measure_time = time.time()
-                    measurements = self.create_measurements(self.probe_ids[0],
-                            measure_time, watts)
-                    self.send_measurements(self.probe_ids[0], measurements)
+                for i in range(len(self.probes_names)):
+                    watts = self.get_watts(self.probe_ids[i])
+                    if watts is not None:
+                        measure_time = time.time()
+                        measurements = self.create_measurements(self.probe_ids[i],
+                                       measure_time, watts)
+                        self.send_measurements(self.probe_ids[i], measurements)
                 time.sleep(max(0, 1-(time.time()-req_time)))
 
     def set_sensor_name(self):
@@ -57,13 +58,15 @@ class Ipmi(Driver):
 
         """
         names = []
+        site, host, number = self.probe_ids[0].split(".")
         # Listing
         command = 'ipmitool '
         command += '-I ' + self.kwargs.get('interface') + ' '
-        command += '-H ' + self.kwargs.get('host') + ' '
+        command += '-H ' + host + '.' + site + ' '
         command += '-U ' + self.kwargs.get('username') + ' '
         command += '-P ' + self.kwargs.get('password') + ' '
         command += 'sensor'
+        LOG.info("command %s" % command)
         child = subprocess.Popen(command,
                                  shell=True,
                                  stdout=subprocess.PIPE,
@@ -89,11 +92,12 @@ class Ipmi(Driver):
             LOG.error('Failed to list the sensors')
             return None
 
-    def get_watts(self):
+    def get_watts(self, probe_name):
         # Get power consumption
+        site, host, number = probe_name.split(".")
         command = 'ipmitool '
         command += '-I ' + self.kwargs.get('interface') + ' '
-        command += '-H ' + self.kwargs.get('host') + ' '
+        command += '-H ' + host + '.' + site + ' '
         command += '-U ' + self.kwargs.get('username') + ' '
         command += '-P ' + self.kwargs.get('password') + ' '
         command += 'sensor reading "' + self.kwargs.get('sensor') + '"'
