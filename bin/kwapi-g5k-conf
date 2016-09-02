@@ -147,43 +147,50 @@ except Exception as e:
 
 logger.info('Retrieving hosts plug mapping')
 switch_probes = {}
+def map_power(node):
+    print node['uid']
+    if not 'sensors' in node:
+        return
+    if not 'power' in node['sensors']:
+        return
+    power = node['sensors']['power']
+
+    if power['available']:
+        if 'pdu' in power['via']:
+            if isinstance(power['via']['pdu'], list):
+                for pdu in power['via']['pdu']:
+                    if 'port' in pdu:
+                        equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
+                    else:
+                        if isinstance(pdu, list):
+                            logger.error("Malformed pdu : %s" % pdu)
+                            return
+                        if pdu['uid'] is None:
+                            #print power
+                            return
+                        else:
+                            equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
+            else:
+                pdu = power['via']['pdu']
+                if 'port' in pdu:
+                    logger.warning('node ' + node['uid'] + ' has str instead of list for power[\'via\']')
+                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
+                else:
+                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
+        if 'www' in power['via']:
+            if not 'per_outlets' in power or power['per_outlets']:
+                pass #used to be required to generate a first list of mappings. As from 2016-01-14, found in reference API
+
 logger.info('Map port to hostname')
 try:
     for cluster in get_site_clusters(site, queues=None):
         nodes = get_resource_attributes('/sites/' + site + '/clusters/' + cluster + \
                                         '/nodes')['items']
         for node in nodes:
-            if not 'sensors' in node:
-                continue
-            if not 'power' in node['sensors']:
-            	continue
-            power = node['sensors']['power']
-
-            if power['available']:
-                if 'pdu' in power['via']:
-                    if isinstance(power['via']['pdu'], list):
-                        for pdu in power['via']['pdu']:
-                            if 'port' in pdu:
-                                equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
-                            else:
-                                if isinstance(pdu, list):
-                                    logger.error("Malformed pdu : %s" % pdu)
-                                    continue
-                                if pdu['uid'] is None:
-                                    #print power
-                                    continue
-                                else:
-                                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
-                    else:
-                        pdu = power['via']['pdu']
-                        if 'port' in pdu:
-                            logger.warning('node ' + node['uid'] + ' has str instead of list for power[\'via\']')
-                            equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
-                        else:
-                            equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
-                if 'www' in power['via']:
-                    if not 'per_outlets' in power or power['per_outlets']:
-                        pass #used to be required to generate a first list of mappings. As from 2016-01-14, found in reference API
+            map_power(node)
+    switchs = get_resource_attributes('/sites/' + site + '/network_equipments')['items']
+    for switch in switchs:
+        map_power(switch)
 
 except Exception as e:
     logger.error('Failed to map power pdus: %r' % e)
@@ -258,8 +265,8 @@ for switch in switchs:
         probes_names = format_probes(switch_probes[switch], switch, site, True)
 	network_probes[switch] = {'uid':probes_uid[1:],
 				  'names':probes_names[1:],}
-    except:
-        logger.error('Failed to generation configuration for %s' % switch)
+    except Exception as e:
+        logger.error('Failed to generation configuration for %s: %s' % (switch, e))
 # pprint(topo)
 # pprint(equips)
 # pprint(network_probes)
