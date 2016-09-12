@@ -57,9 +57,6 @@ def list_probes():
 def probe_info(probe):
     """Returns all information about this probe (id, timestamp, value, unit)"""
     message = {}
-    hostname = socket.getfqdn().split('.')
-    site = hostname[1] if len(hostname) >= 2 else hostname[0]
-    probe = site + '.' + probe
     try:
         for k in flask.request.collector.database.keys():
             message[k] = {}
@@ -75,9 +72,6 @@ def probe_info(probe):
 def probe_value(probe, meter):
     """Returns the probe meter value."""
     message = {}
-    hostname = socket.getfqdn().split('.')
-    site = hostname[1] if len(hostname) >= 2 else hostname[0]
-    probe = site + '.' + probe
     try:
         message[meter] = \
             {
