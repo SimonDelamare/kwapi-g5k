@@ -78,7 +78,7 @@ class APITestCase(unittest.TestCase):
         t = int(time.time())
         probe = u"%s.%s" % (self.site, "bar-1")
         self.add_value([probe], [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
-        rv = self.app.get('/probes/bar-1/')
+        rv = self.app.get('/probes/%s.bar-1/' % site)
         a = {u'power': {
                 probe: dict(timestamp=t, type=u'power', unit=u'KW', value=1)
             }
@@ -92,7 +92,7 @@ class APITestCase(unittest.TestCase):
         self.add_value([probe], [probe], 'power', t, 1, {'type': "power", 'unit': "KW"})
         self.add_value([probe], [probe], 'network_in', t, 1, {'type': "network_in", 'unit': "B"})
         self.add_value([probe], [probe], 'network_out', t, 1, {'type': "network_out", 'unit': "B"})
-        rv = self.app.get('/probes/bar-1/power/')
+        rv = self.app.get('/probes/%s.bar-1/power/' % site)
         a = {u'power': {
                 probe: dict(timestamp=t, type=u'power', unit=u'KW', value=1)
             }
@@ -114,7 +114,7 @@ class APITestCase(unittest.TestCase):
                        {'type': "network_in", 'unit': "B"})
         self.add_value(switch, [probe], 'network_out', t, 2,
                        {'type': "network_out", 'unit': "B"})
-        rv = self.app.get('/probes/gw-switch/network_in/')
+        rv = self.app.get('/probes/%s.gw-switch/network_in/' % site)
         a = {u'network_in': {
             u'%s.gw-switch' % self.site: {
                 u'timestamp': t,
@@ -123,7 +123,7 @@ class APITestCase(unittest.TestCase):
                 u'unit': u'B'}}}
         b = json.loads(rv.data)
         self.assertDictEqual(a, b)
-        rv = self.app.get('/probes/gw-switch/network_out/')
+        rv = self.app.get('/probes/%s.gw-switch/network_out/' % site)
         a = {u'network_out': {
             u'%s.gw-switch' % self.site: {
                 u'timestamp': t,
