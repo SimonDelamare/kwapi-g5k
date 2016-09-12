@@ -191,6 +191,9 @@ try:
     switchs = get_resource_attributes('/sites/' + site + '/network_equipments')['items']
     for switch in switchs:
         map_power(switch)
+    servers = get_resource_attributes('/sites/' + site + '/servers')['items']
+    for server in servers:
+        map_power(server)
 
 except Exception as e:
     logger.error('Failed to map power pdus: %r' % e)
