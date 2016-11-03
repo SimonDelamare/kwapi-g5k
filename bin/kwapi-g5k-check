@@ -129,7 +129,7 @@ def check_energy(machine, hosts, duration):
         if site + '.' + host.address.split('.')[0] not in content['probes']['power']:
             logger.warning('%s is not energitically monitored', host)
             continue
-        n_proc = get_host_attributes(host)['architecture']['smt_size']
+        n_proc = get_host_attributes(host)['architecture']['nb_cores']
         logger.info(str(i) + ' Host %s has %s cores', host_string, n_proc)
         ts = time()
         measures[ts] = {'stress': host.address}
