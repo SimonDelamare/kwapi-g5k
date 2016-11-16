@@ -59,7 +59,12 @@ class GangliaPlugin:
         self.ganglia = GMetric(cfg.CONF.ganglia_server)
         self.metric_name = cfg.CONF.metric_name
         self.metric_units = cfg.CONF.metric_units
-        self.metric_type = cfg.CONF.metric_type
+        if not cfg.CONF.metric_type in ['string', 'int8', 'uint8', 'int16', \
+                                        'uint16', 'int32', 'uint32', 'float', \
+                                        'double']:
+            self.metric_type = 'uint16'
+        else:
+            self.metric_type = cfg.CONF.metric_type
         self.ip_probe = {}
         LOG.debug('Server:', self.ganglia,
                   'metric_name:', self.metric_name,
@@ -90,11 +95,20 @@ class GangliaPlugin:
                     continue
             if not self.ip_probe[probe_id]:
                 continue
+            # Convert metrics to integer, float or string
+            if 'int' in self.metric_type:
+                metrics = int(metrics)
+            elif 'float' in self.metric_type:
+                metrics = float(metrics)
+            elif 'double' in self.metric_type:
+                metrics = float(metrics)
+            else:
+                metrics = str(metrics)
             self.ganglia.send(
                 name=self.metric_name,
                 units=self.metric_units,
                 type=self.metric_type,
-                value=int(metrics),
+                value=metrics,
                 hostname='%s:%s' % (self.ip_probe[probe_id][0],
                                     self.ip_probe[probe_id][1]),
                 spoof=True
