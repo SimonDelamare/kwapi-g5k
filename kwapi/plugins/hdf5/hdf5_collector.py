@@ -97,7 +97,7 @@ def clear_probes(collector):
 
 class ProbeMeasures(IsDescription):
     timestamp = Float64Col()
-    measure = Int64Col()
+    measure = Float64Col()
 
 
 class HDF5_Collector:
