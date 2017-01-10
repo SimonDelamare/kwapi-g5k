@@ -29,7 +29,7 @@ Kwapi drivers
 Kwapi drivers are derived from a Driver superclass, itself derived from Thread.
 So drivers are threads. At least one driver thread is instantiated for each wattmeter
 or switch you want to monitor. Their constructors takes as arguments a list of 
-probe IDs, and kwargs (specific arguments).
+probe IDs, probe names (an alias for probe ids) and kwargs (specific arguments).
 
 Driver threads roles are:
 
@@ -43,7 +43,7 @@ Message format:
 .. image:: ./message_format.png
     :width: 675px
 
-There is several types of drivers already implemented in Kwapi. You can of course 
+There are several types of drivers already implemented in Kwapi. You can of course 
 implement your own driver.
 
 SNMP drivers
@@ -51,9 +51,9 @@ SNMP drivers
 
 Using the SNMP protocol and the right OIDs, you can retrieve a subtree of values 
 corresponding, for a wattmeter, at the power consumption, for a switch, at the 
-network traffic of ihis interfaces.
+network traffic of his interfaces.
 
-Of course, this driver works with any device that implement SNMP protocol. So 
+Of course, this driver works with any device that implementis SNMP protocol. So 
 you can retrieve other metrics depending on what you want to monitor.
 
 Wattmeters via SNMP
@@ -148,7 +148,7 @@ API
 Verb    URL	                            Parameters	                            Expected result
 ====    ===========================     =====================================   ================================================
 GET     /probe-ids/                                                             Returns all known probe IDs.
-GET 	/probes/                                                                Returns all information about all known probes.
+GET     /probes/                                                                Returns all information about all known probes.
 GET     /probes/<probe>/                probe id                                Returns all information about this probe
                                                                                 (id, timestamp, value, type, integrated).
 GET     /probes/<probe>/<metric>/       probe id                                Returns the probe's metric value.
