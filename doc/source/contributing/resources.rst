@@ -20,10 +20,7 @@ Project Hosting Details
 =======================
 
 :Bug tracker: https://intranet.grid5000.fr/bugzilla/
-:Code Hosting: https://github.com/lpouillo/kwapi-g5k
-:Mailing list: g5k-dev team
-:Grid'5000 Doc: https://www.grid5000.fr/mediawiki/index.php/Monitoring
+:Code Hosting: https://github.com/grid5000/kwapi-g5k
+:Mailing list: support-staff Grid'5000
+:Grid'5000 Doc: https://www.grid5000.fr/w/Measurements_tutorial
 
-.. seealso::
-
-   * :ref:`user`

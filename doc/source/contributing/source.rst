@@ -24,7 +24,7 @@ Setting up a Development Sandbox
 
 2. Clone the kwapi project to the machine::
 
-    $ git clone https://github.com/lpouillo/kwapi-g5k.git
+    $ git clone https://github.com/grid5000/kwapi-g5k.git
     $ cd ./kwapi-g5k
 
 3. Once this is done, use develop option of `setup.py` file to install kwapi locally::
@@ -63,5 +63,5 @@ You can report an issue or a feature request on this repository.
 
 Bugzilla can also be used for API related bugs or device configuration problems.
 
-.. _Kwapi on GitHub: http://github.com/lpouillo/kwapi-g5k/issues
+.. _Kwapi on GitHub: http://github.com/grid5000/kwapi-g5k/issues
 .. _Bugzilla on Grid'5000: https://intranet.grid5000.fr/bugzilla/
