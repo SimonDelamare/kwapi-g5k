@@ -55,6 +55,7 @@ Table of contents
    configuration
    usage
    exemples
+   grid5000
 
    contributing/index
    glossary

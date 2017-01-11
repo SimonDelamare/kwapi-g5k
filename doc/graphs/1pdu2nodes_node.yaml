@@ -1,0 +1,15 @@
+---
+nodes:
+  grisou-[1-2]:
+    monitoring:
+      wattmeter: true
+      metric: power 
+  grisou-1:
+    pdu:
+      - uid: grisou-pdu1
+        port: 1
+  grisou-2:
+    pdu:
+      - uid: grisou-pdu1
+        port: 2
+

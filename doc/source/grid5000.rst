@@ -1,0 +1,100 @@
+..
+      Copyright 2017 Clément Parisot (Inria)
+
+      Licensed under the Apache License, Version 2.0 (the "License"); you may
+      not use this file except in compliance with the License. You may obtain
+      a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+      WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+      License for the specific language governing permissions and limitations
+      under the License.
+
+=====================
+Grid'5000 integration
+=====================
+
+Grid'5000 tools
+===============
+
+There are 2 tools developped in kwapi that can be used in Grid'5000:
+
+* **kwapi-g5k-conf**
+* **kwapi-g5k-check**
+
+kwapi-g5k-conf
+--------------
+
+This tool is used to generate Kwapi drivers configuration. It uses content of `/etc/kwapi/drivers.conf.orig` as an initial content
+and use the Grid'5000 API (with execo) to retrieve power configuration and network configuration.
+
+This script is compatible with both *SNMP* and *JSON* drivers. It creates 1 entry per PDU and 1 entry per switch. Only compute nodes
+are configured with power monitoring. Only nodes, servers, interswitch links, Renater links and addtionnal virtual links described 
+in Grid'5000 API are configured for network monitoring. Resolution is set at *1 mesure per second* by default.
+
+kwapi-g5k-check
+---------------
+
+This tool is used to check Kwapi configuration. It uses execo to get Grid'5000 status and reserve the nodes with the API. It has 
+to be launched from Grid'5000 frontend.
+
+It will reserve the nodes of a site and stress then one by one. By pulling the measurement API, it will check that power metrics 
+increase for the node concerned by the test. At the end, it will show a list of nodes for which the check fail.
+
+A network version has been added to this script but was never tested on Grid'5000.
+
+
+Reference-repository configuration
+==================================
+
+PDU entries in Grid'5000 API has to be well defined in order to generate correctly the scripts. We will take each examples of 
+the exemple section and see how to expose them through Grid'5000 API.
+
+1 PDU 2 nodes
+-------------
+
+2 nodes connected to 1 PDU.
+
+.. image:: ../graphs/1pdu2nodes.png
+.. literalinclude:: ../graphs/1pdu2nodes_pdu.yaml
+  :caption: pdus.yaml
+.. literalinclude:: ../graphs/1pdu2nodes_node.yaml
+  :caption: grisou.yaml
+
+1 PDU, 1 node, multiple PSU
+---------------------------
+
+1 Node with 2 PSU (Power Supply Unit) connected to 1 PDU.
+
+.. image:: ../graphs/1pdu1node_multi.png
+.. literalinclude:: ../graphs/1pdu1node_multi_pdu.yaml
+  :caption: pdus.yaml
+.. literalinclude:: ../graphs/1pdu1node_multi_node.yaml
+  :caption: grisou.yaml
+
+1 PDU, shared measure, 2 nodes 
+------------------------------
+
+2 nodes connected to a non-monitorable PDU. The non-monitorable PDU in red is connected to a monitorable PDU.
+It is equivalent to a shared consumption measure for the 2 nodes.
+
+.. image:: ../graphs/1pdu2nodes_shared.png
+.. literalinclude:: ../graphs/1pdu2nodes_shared_pdu.yaml
+  :caption: pdus.yaml
+.. literalinclude:: ../graphs/1pdu2nodes_shared_node.yaml
+  :caption: grisou.yaml
+
+2 PDU, 1 node, 2 PSU 
+--------------------
+
+1 node with 2 PSU connected to 2 different PDU.
+
+.. image:: ../graphs/2pdu1node_multi.png
+.. literalinclude:: ../graphs/2pdu1node_multi_pdu.yaml
+  :caption: pdus.yaml
+.. literalinclude:: ../graphs/2pdu1node_multi_node.yaml
+  :caption: grisou.yaml
+
