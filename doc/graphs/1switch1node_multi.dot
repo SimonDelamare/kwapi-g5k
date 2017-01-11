@@ -1,0 +1,13 @@
+graph switch1 {
+  node [shape=circle, color=lightblue2, style=filled];
+  "nancy.sgrisou1" [shape=box, color=green, style=filled];
+  "nancy.grisou-1";
+
+  subgraph eth0 {
+    "nancy.sgrisou1" -- "nancy.grisou-1" [label="eth0/Port1/0"];
+  }
+
+  subgraph eth1 {
+    "nancy.sgrisou1" -- "nancy.grisou-1" [label="eth1/Port1/1"];
+  }
+}

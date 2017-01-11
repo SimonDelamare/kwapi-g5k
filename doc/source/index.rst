@@ -54,6 +54,7 @@ Table of contents
    architecture
    configuration
    usage
+   exemples
 
    contributing/index
    glossary

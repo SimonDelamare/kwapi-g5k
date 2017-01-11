@@ -1,0 +1,14 @@
+digraph pdu1 {
+  node [shape=circle, color=lightblue2, style=filled];
+  "nancy.grisou-pdu1" [shape=box, color=green, style=filled];
+  "nancy.grisou-pdu2" [shape=box, color=green, style=filled];
+  "nancy.grisou-1";
+
+  subgraph firstPSU {
+    "nancy.grisou-pdu1" -> "nancy.grisou-1" [label="PSU1/Port1"];
+  }
+
+  subgraph secondPSU {
+    "nancy.grisou-pdu2" -> "nancy.grisou-1" [label="PSU2/Port1"];
+  }
+}

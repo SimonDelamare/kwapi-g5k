@@ -1,0 +1,7 @@
+graph switch1 {
+  node [shape=circle, color=lightblue2, style=filled];
+  "nancy.sgrisou1" [shape=box, color=green, style=filled];
+  "nancy.sgrisou2" [shape=box, color=green, style=filled];
+
+  "nancy.sgrisou1" -- "nancy.sgrisou2" [label="Port1/0 - Port1/0"];
+}
