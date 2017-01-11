@@ -13,8 +13,8 @@
    height="183.49113"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.5 r10040"
-   sodipodi:docname="Nouveau document 1">
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="message_format.svg">
   <defs
      id="defs4" />
   <sodipodi:namedview
@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.49497475"
-     inkscape:cx="288.15829"
-     inkscape:cy="534.6114"
+     inkscape:zoom="0.7"
+     inkscape:cx="190.07578"
+     inkscape:cy="30.119443"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -36,9 +36,9 @@
      fit-margin-bottom="1"
      fit-margin-right="1"
      inkscape:window-width="1920"
-     inkscape:window-height="1134"
+     inkscape:window-height="1031"
      inkscape:window-x="0"
-     inkscape:window-y="27"
+     inkscape:window-y="0"
      inkscape:window-maximized="1" />
   <metadata
      id="metadata7">
@@ -48,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -57,158 +57,6 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-8.2544291,-88.848179)">
-    <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.49225962;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3823"
-       width="1439.646"
-       height="111.11678"
-       x="44.446712"
-       y="125.04214" />
-    <rect
-       style="fill:#ee8d8e;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.70292056px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       id="rect2985"
-       width="216.84299"
-       height="91.703651"
-       x="58.352913"
-       y="135.16643" />
-    <text
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="85.862968"
-       y="180.60054"
-       id="text3763"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3765"
-         x="85.862968"
-         y="180.60054">Probe id</tspan></text>
-    <text
-       sodipodi:linespacing="125%"
-       id="text3767"
-       y="213.32034"
-       x="144.45181"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
-       xml:space="preserve"><tspan
-         y="213.32034"
-         x="144.45181"
-         id="tspan3769"
-         sodipodi:role="line">Key</tspan></text>
-    <rect
-       y="135.16643"
-       x="283.61691"
-       height="91.703651"
-       width="216.84299"
-       id="rect3771"
-       style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.70292056px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-    <text
-       sodipodi:linespacing="125%"
-       id="text3773"
-       y="179.37007"
-       x="334.13684"
-       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       xml:space="preserve"><tspan
-         y="179.37007"
-         x="334.13684"
-         id="tspan3775"
-         sodipodi:role="line">Name</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
-       x="330.93372"
-       y="213.93558"
-       id="text3777"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3779"
-         x="330.93372"
-         y="213.93558">Metric name</tspan></text>
-    <rect
-       style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.04669356px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       id="rect3781"
-       width="313.22922"
-       height="91.703651"
-       x="509.89111"
-       y="135.33832" />
-    <text
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="555.97839"
-       y="180.60054"
-       id="text3783"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3785"
-         x="555.97839"
-         y="180.60054">Timestamp</tspan></text>
-    <text
-       sodipodi:linespacing="125%"
-       id="text3787"
-       y="213.93558"
-       x="561.84265"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
-       xml:space="preserve"><tspan
-         y="213.93558"
-         x="561.84265"
-         id="tspan3789"
-         sodipodi:role="line">Seconds since epoch</tspan></text>
-    <rect
-       y="135.33832"
-       x="833.13995"
-       height="91.703651"
-       width="313.22922"
-       id="rect3791"
-       style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.04669356px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-    <text
-       sodipodi:linespacing="125%"
-       id="text3793"
-       y="179.37007"
-       x="903.77802"
-       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       xml:space="preserve"><tspan
-         y="179.37007"
-         x="903.77802"
-         id="tspan3795"
-         sodipodi:role="line">Measure</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
-       x="882.92352"
-       y="213.93558"
-       id="text3797"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3799"
-         x="882.92352"
-         y="213.93558">Raw data from driver</tspan></text>
-    <rect
-       style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.04669356px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       id="rect3801"
-       width="313.22922"
-       height="91.703651"
-       x="1157.3989"
-       y="135.33832" />
-    <text
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="1198.4667"
-       y="179.37007"
-       id="text3803"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3805"
-         x="1198.4667"
-         y="179.37007">Parameters</tspan></text>
-    <text
-       sodipodi:linespacing="125%"
-       id="text3807"
-       y="213.93558"
-       x="1192.7245"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
-       xml:space="preserve"><tspan
-         y="213.93558"
-         x="1192.7245"
-         id="tspan3809"
-         sodipodi:role="line">Depends on metric type</tspan></text>
     <flowRoot
        xml:space="preserve"
        id="flowRoot3811"
@@ -219,5 +67,220 @@
            height="265.71429"
            x="-122.85714"
            y="46.647896" /></flowRegion><flowPara
-         id="flowPara3817"></flowPara></flowRoot>  </g>
+         id="flowPara3817" /></flowRoot>    <g
+       id="g3457"
+       inkscape:export-xdpi="134"
+       inkscape:export-ydpi="134">
+      <rect
+         y="248.7272"
+         x="-714.83875"
+         height="110.90849"
+         width="1873.1129"
+         id="rect3823"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.70055652;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <g
+         transform="translate(3.1413035,122.99131)"
+         id="g3419">
+        <g
+           id="g3377">
+          <rect
+             y="135.16643"
+             x="-705.07568"
+             height="91.703651"
+             width="216.84299"
+             id="rect2985"
+             style="fill:#ee8d8e;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.70292056px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+          <text
+             sodipodi:linespacing="125%"
+             id="text3763"
+             y="184.47749"
+             x="-677.56561"
+             style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+             xml:space="preserve"><tspan
+               y="184.47749"
+               x="-677.56561"
+               id="tspan3765"
+               sodipodi:role="line">Probe id</tspan></text>
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:Sans;-inkscape-font-specification:Sans;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+             x="-618.97675"
+             y="213.32034"
+             id="text3767"
+             sodipodi:linespacing="125%"><tspan
+               sodipodi:role="line"
+               id="tspan3769"
+               x="-618.97675"
+               y="213.32034">Key</tspan></text>
+        </g>
+        <g
+           id="g3405"
+           transform="translate(-0.67336858,0)">
+          <rect
+             style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.0566361px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             id="rect3771"
+             width="317.50452"
+             height="91.349937"
+             x="500.84238"
+             y="135.34329" />
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+             x="517.87585"
+             y="184.47749"
+             id="text3773"
+             sodipodi:linespacing="125%"><tspan
+               sodipodi:role="line"
+               id="tspan3775"
+               x="517.87585"
+               y="184.47749">Probes names</tspan></text>
+          <text
+             transform="scale(0.87631436,1.141143)"
+             sodipodi:linespacing="125%"
+             id="text3777"
+             y="187.46349"
+             x="639.09076"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.58075523px;line-height:125%;font-family:Sans;-inkscape-font-specification:Sans;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+             xml:space="preserve"><tspan
+               id="tspan3363"
+               y="187.46349"
+               x="639.09076"
+               sodipodi:role="line">List of aliases for probe id</tspan></text>
+        </g>
+        <g
+           id="g3384"
+           transform="translate(1.4246265,0)">
+          <rect
+             y="135.33832"
+             x="-478.6803"
+             height="91.703651"
+             width="313.22922"
+             id="rect3781"
+             style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.04669356px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+          <text
+             sodipodi:linespacing="125%"
+             id="text3783"
+             y="180.60054"
+             x="-432.59302"
+             style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+             xml:space="preserve"><tspan
+               y="180.60054"
+               x="-432.59302"
+               id="tspan3785"
+               sodipodi:role="line">Timestamp</tspan></text>
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:Sans;-inkscape-font-specification:Sans;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+             x="-426.72876"
+             y="213.93558"
+             id="text3787"
+             sodipodi:linespacing="125%"><tspan
+               sodipodi:role="line"
+               id="tspan3789"
+               x="-426.72876"
+               y="213.93558">Seconds since epoch</tspan></text>
+        </g>
+        <g
+           id="g3391"
+           transform="translate(2.55396,0)">
+          <rect
+             style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.04669356px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             id="rect3791"
+             width="313.22922"
+             height="91.703651"
+             x="-155.43147"
+             y="135.33832" />
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+             x="-84.793404"
+             y="183.86226"
+             id="text3793"
+             sodipodi:linespacing="125%"><tspan
+               sodipodi:role="line"
+               id="tspan3795"
+               x="-84.793404"
+               y="183.86226">Measure</tspan></text>
+          <text
+             sodipodi:linespacing="125%"
+             id="text3797"
+             y="213.93558"
+             x="-105.6479"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:Sans;-inkscape-font-specification:Sans;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+             xml:space="preserve"><tspan
+               y="213.93558"
+               x="-105.6479"
+               id="tspan3799"
+               sodipodi:role="line">Raw data from driver</tspan></text>
+        </g>
+        <g
+           id="g3412"
+           transform="translate(-1.1718468e-4,0)">
+          <rect
+             y="135.33832"
+             x="828.82751"
+             height="91.703651"
+             width="313.22922"
+             id="rect3801"
+             style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.04669356px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+          <text
+             sodipodi:linespacing="125%"
+             id="text3803"
+             y="183.86226"
+             x="869.89526"
+             style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+             xml:space="preserve"><tspan
+               y="183.86226"
+               x="869.89526"
+               id="tspan3805"
+               sodipodi:role="line">Parameters</tspan></text>
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:Sans;-inkscape-font-specification:Sans;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+             x="864.15308"
+             y="213.93558"
+             id="text3807"
+             sodipodi:linespacing="125%"><tspan
+               sodipodi:role="line"
+               id="tspan3809"
+               x="864.15308"
+               y="213.93558">Depends on metric type</tspan></text>
+        </g>
+        <g
+           id="g3398"
+           transform="translate(-0.76531804,0)">
+          <rect
+             y="135.34329"
+             x="172.27094"
+             height="91.349937"
+             width="317.50452"
+             id="rect3367"
+             style="fill:#eecaa6;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.0566361px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+          <text
+             sodipodi:linespacing="125%"
+             id="text3369"
+             y="184.47749"
+             x="231.29663"
+             style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+             xml:space="preserve"><tspan
+               y="184.47749"
+               x="231.29663"
+               id="tspan3371"
+               sodipodi:role="line">Data type</tspan></text>
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.58075523px;line-height:125%;font-family:Sans;-inkscape-font-specification:Sans;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+             x="322.25555"
+             y="187.46349"
+             id="text3373"
+             sodipodi:linespacing="125%"
+             transform="scale(0.87631436,1.141143)"><tspan
+               sodipodi:role="line"
+               x="322.25555"
+               y="187.46349"
+               id="tspan3375">Metric name</tspan></text>
+        </g>
+      </g>
+    </g>
+  </g>
 </svg>

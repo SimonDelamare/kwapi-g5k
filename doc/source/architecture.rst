@@ -144,16 +144,18 @@ in the collector. So when a probe has not been updated for a long time, it is de
 API
 ^^^
 
-====    ===========================     =====================================   ================================================
-Verb    URL	                            Parameters	                            Expected result
-====    ===========================     =====================================   ================================================
-GET     /probe-ids/                                                             Returns all known probe IDs.
-GET     /probes/                                                                Returns all information about all known probes.
-GET     /probes/<probe>/                probe id                                Returns all information about this probe
-                                                                                (id, timestamp, value, type, integrated).
-GET     /probes/<probe>/<metric>/       probe id                                Returns the probe's metric value.
-                                        metric {power, network}
-====    ===========================     =====================================   ================================================
+====    ===========================     ========================================  ================================================
+Verb    URL	                            Parameters	                              Expected result
+====    ===========================     ========================================  ================================================
+GET     /probe-ids/                                                               Returns all known probe IDs.
+GET     /probes/                                                                  Returns all information about all known probes.
+GET     /probes/<probe>/                probe id                                  Returns all information about this probe
+                                                                                  (id, timestamp, value, type, integrated).
+GET     /probes/<probe>/<metric>/       probe id                                  Returns the probe's metric value.
+                                        metric {energy, network_in, network_out}   
+====    ===========================     ========================================  ================================================
+
+Probe id *must be* in the format **<site>.<probe>** where **site** is the site on which Kwapi is running (could be retrieve with the second field of hostname command), and probe is the probe id. You can also use a probe name instead of a probe id.
 
 Kwapi RRD plugin
 ----------------
@@ -164,9 +166,10 @@ This plugin create and update automatically the RRD files, depending on the valu
 
 As each plugin, he needs:
   * Probe id: probe identifier (could be different than probe name)
-  * Name: metric name
   * Timestamp: time of the measure, given by the driver, unix format timestamp
   * Measure: measure
+  * Data type: metric name
+  * Probes names: list of aliases that will be mapped to this probe id
   * Parameters: other informations about the metrics
 
 
@@ -181,18 +184,26 @@ The visualization plugin provides a web interface with power consumption and net
 ====    =====================================   =========================================================   ==========================================
 Verb    URL	                                    Parameters	                                                Expected result
 ====    =====================================   =========================================================   ==========================================
-GET     /<metric>/last/<period>/                metric { power, network }                                   Returns a webpage with a summary graph
+GET     /<metric>/last/<period>/                metric { energy, network }                                  Returns a webpage with a summary graph
                                                 period { minute, hour, day, week, month, year }             and all probe graphs.
-GET     /<metric>/probe/<probe>/                metric { power, network }                                   Returns a webpage with all graphs about
+GET     /<metric>/probe/<probe>/                metric { energy, network }                                  Returns a webpage with all graphs about
                                                 probe id                                                    this probe (all periods).
-GET     /<metric>/summary-graph/<start>/<end>   metric { power, network }                                   Return a summary graph of the metric
+GET     /<metric>/summary-graph/<start>/<end>   metric { energy, network }                                  Return a summary graph of the metric
                                                 start timestamp                                             evolution about this period
                                                 end timestamp
-GET     /<metric>/graph/<probe>/<start>/<end>   metric { power, network }                                   Returns a graph about this probe.
+GET     /<metric>/graph/<probe>/<start>/<end>   metric { energy, network }                                  Returns a graph about this probe.
                                                 probe id
                                                 start timestamp
                                                 end timestamp
+POST    /zip/[probes]                           probe id or list of probe ids                               Returns a zip file containing all data for
+                                                                                                            in RRD format and all graphs for each 
+                                                                                                            scale.
+GET     /nodes/<job_id>/<metric>                job_id: Grid'5000 OAR job ID                                Returns list of probe ids for the 
+                                                metric { energy, networks }                                 specified job.
 ====    =====================================   =========================================================   ==========================================
+
+Probe id *must be* in the format **<site>.<probe>** where **site** is the site on which Kwapi is running (could be retrieve with the second field of hostname command), and probe is the probe id. You can also use a probe name instead of a probe id.
+
 
 Webpage with a summary graph and all probe graphs:
 
@@ -213,16 +224,25 @@ You can select several probes and display a stacked summary of their consumption
 Use the job field to automatically monitor probes corresponding to your job (select
 the correct probes and adapt timescale)
 
+You can export all RRD data and PNG graphs with the *Download all probes RRD* link or 
+just the selected probe graphs with the *Download selected probes RRD* link.
+
 Graphs
 ^^^^^^
 
 The summary graph shows the total measurements for the selected metric (sum of all the probes).
 Each colour corresponds to a probe.
 
-The legend contains:
+The energy legend contains:
   * Minimum, maximum, average and last measures.
   * Integrated measure (energy consumed (kWh) or network traffic (Kb/s)).
   * Cost if any.
+
+The networl legend contains:
+  * Minimum, maximum, average and last measures for IN and OUT traffic
+  * IN network bandwith in **green** and upside of the graph
+  * OUT network bandwith in **blue** and downside of the graph
+
 
 File sizes:
   * RRD file: 10 Ko.
@@ -262,6 +282,7 @@ The main advantages of this database are:
 
 You can configure the split period of your HDF5 files in the configuration file (1 file per month or less) depending on how much data you want to save.
 
+
 Collector
 ---------
 
@@ -272,22 +293,28 @@ The HDF5 Collector is composed of one Writter by metric with their proper buffer
   * If the plugin is stopped, a **STOP** flag his added in all the queues
   * When the Collector receive a **STOP** flag, buffers are flushed on the disk and Collector exits
 
-Writes on the database are made with a fixed `chunk_size` that can be set in the configuration file.
+A `chunk_size` parameter. In order to limit the stress of writing data to the disk each seconds, we introduced a `chunk_size` parameters 
+that ensure that each write to the disk (flush of HDF5 file) is done only when this amount of data is reached for a metric type.
+
+.. warning:: When you stop HDF5 plugin, a final FLUSH is done to write last data to the disk. **Be sure to wait to the end of this final step or it might results in corrupted data!**
 
 API
 ---
 
 REST API permits to retrieve measures from those databases. Unlike RRD database, HDFStore store raw measures and datas are not alterated.
-API is very similar to Kwapi-API
+API is very similar to Kwapi-API. It format is very Grid'5000 specific because it was developped with the aim to be include to Grid'5000 Metric API.
 
-====    =====================================     =====================================   ===========================================================
-Verb    URL	                                      Parameters	                          Expected result
-====    =====================================     =====================================   ===========================================================
-GET     /<metric>/                                metric { power, network }               Returns all known probe IDs for the metric.
-POST 	/<metric>/timeseries/[job-id|probes]      metric { power, network }               Return all data for the selected probes and selected range.
-                                                  job_id in Grid'5000                     Selection is made with job_id or probe name given.
+====    =====================================     ========================================== ===========================================================
+Verb    URL	                                      Parameters  	                             Expected result
+====    =====================================     ========================================== ===========================================================
+GET     /                                                                                    Returns all known metrics.
+GET     /<metric>/                                metric { energy, network_in, network_out } Returns all known probe IDs for the metric.
+POST    /<metric>/timeseries/[job-id|probes]      metric { energy, network }                 Return all data for the selected probes and selected range.
+                                                  job_id                                     Selection is made with job_id or probe name given.
                                                   probes: list of probes
-====    =====================================     =====================================   ===========================================================
+====    =====================================     ========================================== ===========================================================
+
+Range of data is selected with the *from* and *to* parameters. Resolution by default is 1 and can't be changed.
 
 Kwapi Ganglia
 =============
@@ -301,7 +328,7 @@ All data received from your drivers will be sended to the server. Actual configu
 ============    ==========================    ======================================================================
 Metric          Remote name                   Parameters
 ============    ==========================    ======================================================================
-power           pdu2                          * units: Watts
+power           pdu                           * units: Watts
                                               * type: uint16
                                               * value: int(metrics)
                                               * hostname: ip:hostname (ex: 192.168.1.1:griffon-54.nancy.grid5000.fr)
@@ -311,3 +338,4 @@ network_in      None
 network_out     None
 ============    ==========================    ======================================================================
 
+You can modiy this parameters in the config file. Float values for metrics will be supported.
