@@ -60,8 +60,10 @@ the exemple section and see how to expose them through Grid'5000 API.
 
 .. image:: ../graphs/1pdu2nodes.png
 .. literalinclude:: ../graphs/1pdu2nodes_pdu.yaml
+  :language: yaml
   :caption: pdus.yaml
 .. literalinclude:: ../graphs/1pdu2nodes_node.yaml
+  :language: yaml
   :caption: grisou.yaml
 
 1 PDU, 1 node, multiple PSU
@@ -71,8 +73,10 @@ the exemple section and see how to expose them through Grid'5000 API.
 
 .. image:: ../graphs/1pdu1node_multi.png
 .. literalinclude:: ../graphs/1pdu1node_multi_pdu.yaml
+  :language: yaml
   :caption: pdus.yaml
 .. literalinclude:: ../graphs/1pdu1node_multi_node.yaml
+  :language: yaml
   :caption: grisou.yaml
 
 1 PDU, shared measure, 2 nodes 
@@ -83,8 +87,10 @@ It is equivalent to a shared consumption measure for the 2 nodes.
 
 .. image:: ../graphs/1pdu2nodes_shared.png
 .. literalinclude:: ../graphs/1pdu2nodes_shared_pdu.yaml
+  :language: yaml
   :caption: pdus.yaml
 .. literalinclude:: ../graphs/1pdu2nodes_shared_node.yaml
+  :language: yaml
   :caption: grisou.yaml
 
 2 PDU, 1 node, 2 PSU 
@@ -94,7 +100,9 @@ It is equivalent to a shared consumption measure for the 2 nodes.
 
 .. image:: ../graphs/2pdu1node_multi.png
 .. literalinclude:: ../graphs/2pdu1node_multi_pdu.yaml
+  :language: yaml
   :caption: pdus.yaml
 .. literalinclude:: ../graphs/2pdu1node_multi_node.yaml
+  :language: yaml
   :caption: grisou.yaml
 
