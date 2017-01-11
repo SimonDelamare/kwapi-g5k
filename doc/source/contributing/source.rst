@@ -27,13 +27,13 @@ Setting up a Development Sandbox
     $ git clone https://github.com/grid5000/kwapi-g5k.git
     $ cd ./kwapi-g5k
 
-3. Once this is done, use develop option of `setup.py` file to install kwapi locally::
+3. Once this is done, use install option of `setup.py` file to install kwapi locally::
 
-    $ python setup.py develop
+    $ python setup.py install
 
 4. If some dependant packages are missing, fix them with `pip install`::
 
-    $ pip install -r requirments.txt
+    $ pip install -r requirements.txt
 
 4. You can start to hack kwapi. If you are preparing a patch, create a topic branch and switch to
    it before making any changes::
