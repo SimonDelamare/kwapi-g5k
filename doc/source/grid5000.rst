@@ -53,6 +53,12 @@ Reference-repository configuration
 PDU entries in Grid'5000 API has to be well defined in order to generate correctly the scripts. We will take each examples of 
 the exemple section and see how to expose them through Grid'5000 API.
 
+.. warning:: As a reference, you should probably read before:
+
+* https://www.grid5000.fr/mediawiki/index.php/Measurements_tutorial#Finding_nodes_supporting_power_metrics,
+* https://www.grid5000.fr/mediawiki/index.php/Measurements_tutorial#Power_probe_naming_and_description
+* https://www.grid5000.fr/mediawiki/index.php/TechTeam:Reference_Repository#Monitoring_section
+
 1 PDU 2 nodes
 -------------
 
