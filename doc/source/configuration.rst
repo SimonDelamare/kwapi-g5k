@@ -145,7 +145,7 @@ verbose                      true                                  Print more ve
 ===========================  ====================================  ==============================================================
 
 Kwapi forwarder specific
-=========================
+========================
 
 The following table lists the Kwapi forwarder specific options in the forwarder
 configuration file. For information we are listing the configuration elements that

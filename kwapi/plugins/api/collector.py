@@ -61,19 +61,19 @@ class Record(dict):
         else:
             self['integrated'] = integrated
             self['value'] = measure
-        
 
     def add(self, timestamp, measure, params):
         """Updates fields with consumption data."""
-        currentTime = timestamp 
+        current_time = timestamp
         if self['type'] != 'Gauge':
             # No integrated value
             self['value'] = measure
         else:
-            self['integrated'] += (currentTime - self['timestamp']) / 3600.0 * \
+            integrated_value = (current_time - self['timestamp']) / 3600.0 * \
                            (measure / 1000.0)
+            self['integrated'] += integrated_value
             self['value'] = measure
-        self['timestamp'] = currentTime
+        self['timestamp'] = current_time
 
 
 class Collector:
@@ -93,19 +93,21 @@ class Collector:
         self.lock.acquire()
         if not type(probes_names) == list:
             probes_names = list(probes_names)
-        if True: #try:
+        if True:  # try:
             if data_type not in self.database.keys():
                 self.database[data_type] = {}
             for probe_name in probes_names:
                 if probe_name in self.database[data_type].keys():
-                    self.database[data_type][probe_name].add(timestamp, measure, params)
+                    self.database[data_type][probe_name].add(timestamp,
+                                                             measure, params)
                 else:
-                    record = Record(timestamp=timestamp, measure=measure, \
-                             data_type=data_type, params=params, integrated=0.0)
+                    record = Record(timestamp=timestamp, measure=measure,
+                                    data_type=data_type, params=params,
+                                    integrated=0.0)
                     self.database[data_type][probe_name] = record
-        else: #except:
+        else:  # except:
             LOG.error("Fail to add %s datas" % probe)
-        #finally:
+        # finally:
         self.lock.release()
 
     def remove(self, probe):
@@ -131,8 +133,8 @@ class Collector:
         # Cleaning
         for data_type in self.database.keys():
             for probe in self.database[data_type].keys():
-                if time.time() - self.database[data_type][probe]['timestamp'] > \
-                            cfg.CONF.cleaning_interval:
+                dt = time.time() - self.database[data_type][probe]['timestamp']
+                if dt > cfg.CONF.cleaning_interval:
                     LOG.info('Removing data of probe %s' % probe)
                     self.remove(probe)
         # Schedule periodic execution of this function

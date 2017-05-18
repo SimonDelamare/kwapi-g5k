@@ -64,6 +64,7 @@ buffered_values = {
     "network_out": Queue(),
 }
 
+
 def update_hdf5(probe, probes_names, data_type, timestamp, metrics, params):
     """Updates HDF5 file associated with this probe."""
     if not data_type in buffered_values:
@@ -72,15 +73,16 @@ def update_hdf5(probe, probes_names, data_type, timestamp, metrics, params):
         probes_names = list(probes_names)
     for probe_name in probes_names:
         if data_type in probes_names_maps:
-            probes_names_maps[data_type].add_edge(probe_name,probe)
+            probes_names_maps[data_type].add_edge(probe_name, probe)
         else:
             probes_names_maps[data_type] = nx.Graph()
-            probes_names_maps[data_type].add_edge(probe_name,probe)
+            probes_names_maps[data_type].add_edge(probe_name, probe)
     buffered_values[data_type].put((probe, timestamp, metrics))
     if probes_sets.get(data_type, None):
         probes_sets[data_type].add(probe)
     else:
         probes_sets[data_type] = set([probe])
+
 
 def get_probe_path(probe):
     site = probe.split(".")[0]
@@ -88,9 +90,15 @@ def get_probe_path(probe):
     return "/%s/%s" % (site, host.replace('.', "__").replace('-', '_'))
 
 
+def clear_probes(collector):
+    collector.probes_names_maps = {}
+    collector.probes_sets = {}
+
+
 class ProbeMeasures(IsDescription):
     timestamp = Float64Col()
-    measure = Int64Col()
+    measure = Float64Col()
+
 
 class HDF5_Collector:
     """
@@ -159,12 +167,12 @@ class HDF5_Collector:
         keys = self.measurements.keys()
         for probe in keys:
             zipped = map(list, zip(*self.measurements[probe]))
-            self.write_hdf5(probe,
-                            np.array(zipped[0]),  # Timestp
-                            np.array(zipped[1]))  # measures
+            if len(zipped) == 2:
+                self.write_hdf5(probe,
+                                np.array(zipped[0]),  # Timestp
+                                np.array(zipped[1]))  # measures
             del self.measurements[probe]
         buffered_values[self.data_type].task_done()
-
 
     def write_hdf5(self, probe, timestamps, measures):
         self.lock.acquire()
@@ -210,8 +218,9 @@ class HDF5_Collector:
 
     def get_probes_names(self):
         probes_names = set()
-        for probe_id in list(probes_sets[self.data_type]):
-            for probe in probes_names_maps[self.data_type].neighbors(probe_id):
+        for probe_id in list(probes_sets.get(self.data_type, [])):
+            metric_map = probes_names_maps.get(self.data_type, nx.Graph())
+            for probe in metric_map.neighbors(probe_id):
                 try:
                     probes_names.add(probe)
                 except:

@@ -24,8 +24,6 @@ from threading import Lock
 import struct
 import time
 import uuid
-import ast
-import re
 import socket
 from tempfile import NamedTemporaryFile
 
@@ -33,9 +31,6 @@ import rrdtool
 from kwapi.plugins.rrd.rrd import get_rrd_filename, get_png_filename
 
 from kwapi.utils import cfg, log
-from socket import getfqdn
-from execo_g5k.topology import g5k_graph
-from execo_g5k import get_host_attributes, get_resource_attributes
 import networkx as nx
 
 LOG = log.getLogger(__name__)
@@ -94,9 +89,6 @@ probes_set_network = set()
 probes_set_power = set()
 all_uid_power = set()
 
-# Loads topology from config file.
-parser = cfg.ConfigParser('/etc/kwapi/live.conf', {})
-parser.parse()
 hostname = socket.getfqdn().split('.')
 site = hostname[1] if len(hostname) >= 2 else hostname[0]
 
@@ -108,7 +100,7 @@ def find_multi_probe(probe_name, data_type):
 
     If no probe is attached to probe_name, return None.
 
-    >>> find_multi_probe("nancy.griffon-1")
+    >>> find_multi_probe("nancy.griffon-1", "power")
     nancy.griffon-1-2-3-...-x #corresponding pdu ID
     """
     try:
@@ -263,6 +255,8 @@ def build_graph_energy_init(start, end, probes, summary, zip_file=False):
         multi_probes_selected = multi_probes_selected.union(find_multi_probe(probe, 'power'))
     probes_uid = list(multi_probes_selected)
 
+    if len(probes) == 0:
+        return None
     # Single probe and no summary
     if len(probes) == 1 and not summary and scale:
         png_file = get_png_filename(probes[0], "power", scale)
@@ -311,7 +305,7 @@ def build_graph_energy(start, end, probes, probes_name, summary, cachable, png_f
              '--alt-y-grid',
              '--vertical-label', 'Watts',
              '--lower-limit', '0',
-             '--rigid',
+             '--slope-mode',
              ]
     if end - start <= 300:
         args += ['--x-grid', 'SECOND:30:MINUTE:1:MINUTE:1:0:%H:%M']
@@ -422,6 +416,9 @@ def build_graph_network_init(start, end, probes, summary, zip_file=False):
     probes_in = list(probes_in)
     probes_out = list(probes_out)
 
+    # Empty probes
+    if len(probes_in) == 0 or len(probes_out) == 0:
+        return None
     # Single probe and no summary
     if len(probes) == 1 and not summary and scale:
         png_file = get_png_filename(probes[0], "network_in", scale)
@@ -460,7 +457,6 @@ def build_graph_network(start, end, probes, probes_in, probes_out, summary, cach
                 '--title', str(probes[0]) + scale_label,
                 '--width', '497',
                 '--height', '187',
-                #'--upper-limit', str(cfg.CONF.max_metrics),
                 ]
     # Common arguments
     args += ['--start', str(start),
@@ -469,9 +465,8 @@ def build_graph_network(start, end, probes, probes_in, probes_out, summary, cach
              '--imgformat', 'PNG',
              '--alt-y-grid',
              '--vertical-label', 'bits/s',
-             #'--lower-limit', '0',
-             #'--rigid',
              '--base', '1000',
+             '--slope-mode',
              ]
     if end - start <= 300:
         args += ['--x-grid', 'SECOND:30:MINUTE:1:MINUTE:1:0:%H:%M']

@@ -44,37 +44,40 @@ class Snmp(Driver):
     def run(self):
         """Starts the driver thread."""
         while not self.stop_request_pending():
-            measure_time = time.time()
-            metrics_list = self.get_metrics()
-            #Sum duplicate probes metrics in a specific dictionnary
-            agg_values = {}
-
-            if metrics_list is not None:
-                i = 0
-                for metrics in metrics_list:
-		    probe = self.probe_ids[i]
-		    i+=1
-                    if not probe:
-		        continue
-                    # probe_data_type =  {'name':'switch.port.receive.bytes',
-                    #                     'type':'Cummulative',
-                    #                     'unit':'B'}
-                    if self.probe_data_type['type'] == 'Gauge':
-		        if not probe in agg_values:
-		            agg_values[probe] = 0
-		        agg_values[probe] += metrics
-		    else:
-		        measurements = self.create_measurements(probe,
-						                measure_time,
-						                metrics)
+            try:
+                req_time = time.time()
+                measure_time = time.time()
+                metrics_list = self.get_metrics()
+                #Sum duplicate probes metrics in a specific dictionnary
+                agg_values = {}
+                if metrics_list is not None:
+                    i = 0
+                    for metrics in metrics_list:
+                        probe = self.probe_ids[i]
+                        i+=1
+                        if not probe:
+                            continue
+                        # probe_data_type =  {'name':'switch.port.receive.bytes',
+                        #                     'type':'Cummulative',
+                        #                     'unit':'B'}
+                        if self.probe_data_type['type'] == 'Gauge':
+                            if not probe in agg_values:
+                                agg_values[probe] = 0
+                            agg_values[probe] += metrics
+                        else:
+                            measurements = self.create_measurements(probe,
+                                                                    measure_time,
+                                                                    metrics)
+                            self.send_measurements(probe, measurements)
+                    #Send each sum of probe
+                    for probe, agg_value in agg_values.items():
+                        measurements = self.create_measurements(probe,
+                                                                measure_time,
+                                                                agg_value)
                         self.send_measurements(probe, measurements)
-		#Send each sum of probe
-                for probe, agg_value in agg_values.items():
-                     measurements = self.create_measurements(probe,
-							     measure_time,
-							     agg_value)
-		     self.send_measurements(probe, measurements)
-            time.sleep(self.kwargs.get('resolution', 1))
+                time.sleep(max(0, self.kwargs.get('resolution', 1)-(time.time()-req_time)))
+            except Exception as e:
+                LOG.error("Exception in SNMP Thread: %s" % e)
 
     def get_metrics(self):
         """Returns the OID field."""

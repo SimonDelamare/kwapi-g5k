@@ -21,7 +21,7 @@ import setuptools
 setuptools.setup(
 
     name='kwapi-g5k',
-    version='1.1',
+    version='1.1.4',
 
     description='Grid5000 Monitoring Framework',
 
@@ -80,6 +80,7 @@ setuptools.setup(
             'kwapi-hdf5 = kwapi.plugins.hdf5.app:start',
             'kwapi-live = kwapi.plugins.live.app:start',
             'kwapi-ganglia = kwapi.plugins.ganglia.app:start']
-    }
-    
+    },
+
+    test_suite='nose.collector'
 )

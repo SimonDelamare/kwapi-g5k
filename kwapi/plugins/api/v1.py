@@ -31,9 +31,12 @@ def welcome():
 def list_probes_ids():
     """Returns all known probes IDs."""
     message = {}
+    response = None
     try:
-        message['probe_ids'] = map(lambda x: x.split('.')[1], 
-                               flask.request.collector.database.keys())
+        message['probe_ids'] = []
+        for k in flask.request.collector.database.keys():
+            all_probe_ids = flask.request.collector.database[k].keys()
+            message['probe_ids'].extend(all_probe_ids)
         response = flask.jsonify(message)
         response.headers.add('Access-Control-Allow-Origin', '*')
     except:
@@ -44,8 +47,7 @@ def list_probes_ids():
 @blueprint.route('/probes/')
 def list_probes():
     """Returns all information about all known probes."""
-    message = {}
-    message['probes'] = flask.request.collector.database
+    message = {'probes': flask.request.collector.database}
     response = flask.jsonify(message)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
@@ -53,16 +55,14 @@ def list_probes():
 
 @blueprint.route('/probes/<probe>/')
 def probe_info(probe):
-    """Returns all information about this probe (id, timestamp, value, unit)."""
+    """Returns all information about this probe (id, timestamp, value, unit)"""
     message = {}
-    hostname = socket.getfqdn().split('.')
-    site = hostname[1] if len(hostname) >= 2 else hostname[0]
-    probe = site + '.' + probe
     try:
         for k in flask.request.collector.database.keys():
+            message[k] = {}
             message[k][probe] = flask.request.collector.database[k][probe]
-    except KeyError:
-        flask.abort(404)
+    except KeyError as e:
+        flask.abort(404, e)
     response = flask.jsonify(message)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
@@ -73,12 +73,12 @@ def probe_value(probe, meter):
     """Returns the probe meter value."""
     message = {}
     try:
-        message[probe] = \
+        message[meter] = \
             {
-                meter: flask.request.collector.database[meter][probe]
+                probe: flask.request.collector.database[meter][probe]
             }
-    except KeyError:
-        flask.abort(404)
+    except KeyError as e:
+        flask.abort(404, str(e))
     response = flask.jsonify(message)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
