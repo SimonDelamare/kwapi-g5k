@@ -115,6 +115,12 @@ def _get_api_path(headers):
     return "/" + headers.get('HTTP_X_API_VERSION', 'sid') + \
         headers.get('HTTP_X_API_PREFIX', '') + '/'
 
+def filter_network_interface(probe):
+    # Return hostname without the interface
+    # IN: 'cacahuete.griffon-2-eth0'
+    # OUT: 'griffon-2'
+    return probe.split(".")[0] + "." + "-".join(probe.split(".")[1].split("-")[:2])
+
 @blueprint.route('/<metric>/timeseries')
 def retrieve_measurements(metric):
     """Returns measurements."""
@@ -131,11 +137,32 @@ def retrieve_measurements(metric):
         start_time = job_info['started_at']
         end_time = start_time + job_info['walltime']
         nodes = list(set(job_info['resources_by_type']['cores']))
-        probes = [site + '.' + node.split('.')[0] for node in nodes]
+        probes=[]
+        for node in nodes:
+            selectedProbe = site + '.' + node.split('.')[0]
+            all_probes = []
+            if metric == 'power':
+                all_probes = flask.request.storePower.get_probes_names()
+            elif metric == 'network_in':
+                all_probes = flask.request.storeNetworkIn.get_probes_names()
+            else :
+                all_probes = flask.request.storeNetworkOut.get_probes_names()
+            for probe in all_probes:
+                try:
+                    if selectedProbe == filter_network_interface(probe):
+                        probes.append(probe)
+                except:
+                    continue
     elif 'only' in args:
         probes = [site + '.' + node for node in args['only'].split(',')]
-        start_time = args['from'] if 'from' in args else time.time() - 24 * 3600
-        end_time = args['to'] if 'to' in args else time.time()
+        try:
+            start_time = int(args.get('from', time.time() - 24 * 3600))
+        except:
+            start_time = int(time.time() - 24 * 3600)
+        try:
+            end_time = int(args.get('to', time.time()))
+        except:
+            end_time = int(time.time())
     else:
         if metric == 'power':
             probes = flask.request.storePower.get_probes_names()

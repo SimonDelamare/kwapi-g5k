@@ -29,7 +29,7 @@ import flask
 from flask import flash
 from jinja2 import TemplateNotFound
 
-from kwapi.utils import cfg
+from kwapi.utils import cfg, log
 import live
 sites = []
 
@@ -46,6 +46,7 @@ web_opts = [
 ]
 
 cfg.CONF.register_opts(web_opts)
+LOG = log.getLogger(__name__)
 
 blueprint = flask.Blueprint('v1', __name__, static_folder='static')
 
@@ -117,15 +118,45 @@ def welcome_probe(metric, probe):
     except TemplateNotFound:
         flask.abort(404)
 
+def filter_network_interface(probe):
+    # Return hostname without the interface
+    # IN: 'cacahuete.griffon-2-eth0'
+    # OUT: 'nancy.griffon-2'
+    return probe.split(".")[0] + "." + "-".join(probe.split(".")[1].split("-")[:2])
 
-@blueprint.route('/nodes/<job>/')
-def get_nodes(job):
+
+@blueprint.route('/nodes/<job>/<metric>/')
+def get_nodes(job, metric):
     """Returns nodes assigned to a job."""
     site = socket.getfqdn().split('.')
     site = site[1] if len(site) >= 2 else site[0]
     path = '/sites/' + site + '/jobs/' + job
     job_properties = get_resource_attributes(path)
     nodes = job_properties['assigned_nodes']
+    if "network" in metric:
+        probes = []
+        for node in nodes:
+            selectedProbe = site + '.' + node.split('.')[0]
+            all_probes = flask.request.probes_network
+            for probe in all_probes:
+                try:
+                    if selectedProbe == filter_network_interface(probe):
+                        probes.append("%s.%s.grid5000.fr" % (probe.split(".")[1],probe.split(".")[0]))
+                except:
+                    continue
+        nodes = probes
+    else:
+        probes = []
+        for node in nodes:
+            selectedProbe = site + '.' + node.split('.')[0]
+            all_probes = flask.request.probes_power
+            for probe in all_probes:
+                try:
+                    if selectedProbe == filter_network_interface(probe):
+                        probes.append("%s.%s.grid5000.fr" % (probe.split(".")[1],probe.split(".")[0]))
+                except:
+                    continue
+        nodes = probes
     try:
         started_at = job_properties['started_at']
     except KeyError:
@@ -143,7 +174,7 @@ def get_nodes(job):
 @blueprint.route('/zip/')
 def send_zip():
     """Sends zip file."""
-    probes = flask.request.args.get('probes') 
+    probes = flask.request.args.get('probes', [])
     try:
         if probes:
             probes = probes.split(',')
@@ -162,6 +193,10 @@ def send_zip():
         for probe in probes:
             try:
                 rrd_files = live.get_rrds_from_name(probe, metric)
+                if len(rrd_files) == 0:
+                    # No RRD to store in zip
+                    LOG.error("No RRD for %s, %s" % (metric, probe))
+                    continue
                 for i in range(len(rrd_files)):
                     zip_file.write(rrd_files[i], '/rrd/%s_%s_%d.rrd' %(metric, probe.replace(".","-"), i))
                 for scale in scales:
@@ -186,7 +221,8 @@ def send_zip():
                         os.unlink(png_file)
                     else:
                         continue
-            except:
+            except Exception as e:
+                LOG.error("Fail to add %s: %s" % (probe, e))
                 continue
     # Generate summary
     for scale in scales:
@@ -197,9 +233,11 @@ def send_zip():
                                                probes,
                                                summary=True,
                                                zip_file=True)
-            zip_file.write(png_file_energy, '/png/summary-energy-' + scale + '.png')
-            os.unlink(png_file_energy)
-        except:
+            if png_file_energy:
+                zip_file.write(png_file_energy, '/png/summary-energy-' + scale + '.png')
+                os.unlink(png_file_energy)
+        except Exception as e:
+            LOG.error("Fail to add energy %s, %s: %s" % (probes, scale, e))
             continue
     for scale in scales:
         try:
@@ -209,9 +247,11 @@ def send_zip():
                                                 probes,
                                                 summary=True,
                                                 zip_file=True)
-            zip_file.write(png_file_network, '/png/summary-network-' + scale + '.png')
-            os.unlink(png_file_network)
-        except:
+            if png_file_network:
+                zip_file.write(png_file_network, '/png/summary-network-' + scale + '.png')
+                os.unlink(png_file_network)
+        except Exception as e:
+            LOG.error("Fail to add network %s, %s: %s" % (probes, scale, e))
             continue
     return flask.send_file(tmp_file,
                            as_attachment=True,
@@ -224,11 +264,11 @@ def send_zip():
 def send_summary_graph(metric,start, end):
     """Sends summary graph."""
     probes_list = []
-    if metric == 'energy':                                                     
-        probes_list = flask.request.probes_power                                    
-    elif metric == 'network':                                                  
-        probes_list = flask.request.probes_network                                  
-    else:                                                                      
+    if metric == 'energy':
+        probes_list = flask.request.probes_power
+    elif metric == 'network':
+        probes_list = flask.request.probes_network
+    else:
         flask.abort(404) 
     probes = flask.request.args.get('probes')
     if probes:

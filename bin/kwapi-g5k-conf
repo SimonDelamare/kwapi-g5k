@@ -8,13 +8,14 @@
 from socket import getfqdn
 from pprint import pprint
 from execo import Process, logger
-from execo_g5k import get_site_clusters, get_cluster_hosts, get_host_attributes, get_resource_attributes, topology
+from execo_g5k import get_site_clusters, get_cluster_hosts, get_host_attributes, get_resource_attributes, topology, config, get_site_network_equipments, get_network_equipment_attributes, get_site_hosts
 import re
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 _community = 'public'
 _protocol_power = '1'
 _protocol_network = '2c'
+_output_dir = '/etc/kwapi'
 
 # Determining site
 hostname = getfqdn().split('.')
@@ -92,101 +93,110 @@ try:
                     if 'wattmetre' in sensor['power']:
                         equips[pdu['uid']] = {'driver': 'Json_url', 'parameters':
                             {'url': sensor['power']['wattmetre']['www']['url']},
-                            'probes': [], 'probes_names': []}
-except:
-    logger.error('Fail to retrieve power equipments')
+                            'mapping': [], 'probes': [], 'probes_names': []}
+except Exception as e:
+    logger.error('Fail to retrieve power equipments: %s' % e)
 
 logger.info('Retrieving network equipments information')
 switchs = {}
-g = topology.g5k_graph(site)
-switches_cluster = [x[0] for x in filter(lambda n: n[1]['kind'] in ['switch', 'router'], g.nodes(True))]
-hosts_cluster = set(g.nodes()) - set(switches_cluster)
+hosts_cluster = get_site_hosts(site, queues=None)+[u"renater"]
 
 try:
-    for network_equipment in get_resource_attributes('/sites/'+site+'/network_equipments/')['items']:
-        if network_equipment.get('type', '') == 'network_equipment':
-            switch = network_equipment.get('uid', None)
-            switch_uid = to_long_uid(switch, site)
-            if switch_uid in switches_cluster:
-                # Iter on switch linecards/ports
-                l = -1
-                for linecard in network_equipment.get('linecards', []):
-                    l+=1
-                    snmp_pattern = linecard.get('snmp_pattern', None)
-                    if not snmp_pattern:
-                        logger.warn("No snmp_pattern for %s: %s" % (switch, l))
-                        continue
-                    p = -1
-                    for port in linecard.get('ports',[]):
-                        p+=1
-                        host_uid = None
-                        device_port = ""
-                        if port.has_key('uid'):
-                            # Convert renater name
-                            host_uid = format_host_name(port['uid'])
-                            if port.has_key('port'):
-                                device_port = format_host_port(port['port'])
-                            if not to_long_uid(host_uid, site) in hosts_cluster:
-                                host_uid = None
-                        try:
-                            device = host_uid + device_port if host_uid else None
-                            port_name = snmp_pattern.replace('%LINECARD%', str(l)).replace('%PORT%', str(p))
-                            port_uid = "%d-%d" % (l, p)
-                            if host_uid:
-                                if switchs.has_key(switch):
-                                    if switchs.has_key(port_name):
-                                        logger.error('Collision on switch %s port %s host %s'
-                                                     % (switch, port_name, host_uid))
-                                    switchs[switch][port_name] = (device, port_uid)
-                                else:
-                                    switchs[switch] = {}
-                                    switchs[switch][port_name] = (device, port_uid)
-                        except:
-                            logger.error("Can't write %s:%s:%d:%d:%s" % (switch, snmp_pattern, l, p, host_uid))
+    for network_equipment in get_site_network_equipments(site):
+        network_equipment = get_network_equipment_attributes(network_equipment)
+        switch = network_equipment.get("uid", None)
+        switch_uid = to_long_uid(switch, site)
+        # Iter on switch linecards/ports
+        l = -1
+        for linecard in network_equipment.get('linecards', []):
+            l+=1
+            snmp_pattern = linecard.get('snmp_pattern', None)
+            if not snmp_pattern:
+                logger.warn("No snmp_pattern for %s: %s" % (switch, l))
+                continue
+            p = -1
+            for port in linecard.get('ports',[]):
+                p+=1
+                host_uid = None
+                device_port = ""
+                if port.has_key('uid'):
+                    host_uid = format_host_name(port['uid'])
+                    if port.has_key('port'):
+                        device_port = format_host_port(port['port'])
+                    if not (to_long_uid(host_uid, site) in hosts_cluster or host_uid in hosts_cluster):
+                        host_uid = "%s_%s" % (switch, host_uid)
+                #try:
+                device = host_uid + device_port if host_uid else None
+                port_name = snmp_pattern.replace('%LINECARD%', str(l)).replace('%PORT%', str(p))
+                port_uid = "%d-%d" % (l, p)
+                if host_uid:
+                    if switchs.has_key(switch):
+                        if switchs.has_key(port_name):
+                            logger.error('Collision on switch %s port %s host %s'
+                                         % (switch, port_name, host_uid))
+                        switchs[switch][port_name] = (device, port_uid)
+                    else:
+                        switchs[switch] = {}
+                        switchs[switch][port_name] = (device, port_uid)
+                #except:
+                #    logger.error("Can't write %s:%s:%d:%d:%s" % (switch, snmp_pattern, l, p, host_uid))
 
-    #pprint(equips)
-except:
+except Exception as e:
     logger.error('Failed to retrieve network monitoring')
+    logger.error('%s' % e)
 
 logger.info('Retrieving hosts plug mapping')
 switch_probes = {}
+def map_power(node):
+    print node['uid']
+    if not 'sensors' in node:
+        return
+    if not 'power' in node['sensors']:
+        return
+    power = node['sensors']['power']
+
+    if power['available']:
+        if 'pdu' in power['via']:
+            if isinstance(power['via']['pdu'], list):
+                for pdu in power['via']['pdu']:
+                    if 'port' in pdu:
+                        equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
+                    else:
+                        if isinstance(pdu, list):
+                            logger.error("Malformed pdu : %s" % pdu)
+                            return
+                        if pdu['uid'] is None:
+                            #print power
+                            return
+                        else:
+                            equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
+            else:
+                pdu = power['via']['pdu']
+                if 'port' in pdu:
+                    logger.warning('node ' + node['uid'] + ' has str instead of list for power[\'via\']')
+                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
+                else:
+                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
+        if 'www' in power['via']:
+            if not 'per_outlets' in power or power['per_outlets']:
+                pass #used to be required to generate a first list of mappings. As from 2016-01-14, found in reference API
+
 logger.info('Map port to hostname')
 try:
-    for cluster in get_site_clusters(site):
+    for cluster in get_site_clusters(site, queues=None):
         nodes = get_resource_attributes('/sites/' + site + '/clusters/' + cluster + \
                                         '/nodes')['items']
         for node in nodes:
-            if not node.has_key('sensors'):
-                continue
-            power = node['sensors']['power']
+            map_power(node)
+    switchs = get_resource_attributes('/sites/' + site + '/network_equipments')['items']
+    for switch in switchs:
+        map_power(switch)
+    servers = get_resource_attributes('/sites/' + site + '/servers')['items']
+    for server in servers:
+        map_power(server)
 
-            if power['available']:
-                if 'pdu' in power['via']:
-                    if isinstance(power['via']['pdu'], list):
-                        for pdu in power['via']['pdu']:
-                            if 'port' in pdu:
-                                equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
-                            else:
-                                if isinstance(pdu, list):
-                                    logger.error("Malformed pdu : %s" % pdu)
-                                    continue
-                                if pdu['uid'] is None:
-                                    #print power
-                                    continue
-                                else:
-                                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
-                    else:
-                        pdu = power['via']['pdu']
-                        if 'port' in pdu:
-                            logger.warning('node ' + node['uid'] + ' has str instead of list for power[\'via\']')
-                            equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
-                        else:
-                            equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
-                if 'www' in power['via']:
-                    if not 'per_outlets' in power or power['per_outlets']:
-                        equips[pdu['uid']]['probes'].append(node['uid'])
-except:
-    logger.error('Failed to map power pdus')
+except Exception as e:
+    logger.error('Failed to map power pdus: %r' % e)
 
 #pprint(equips)
 logger.info('Generating probe list for Snmp drivers')
@@ -194,16 +204,29 @@ try:
     for pdu in equips:
         equip =equips[pdu]
         if 'mapping' in equip and len(equip['mapping']) > 0:
+            # outlet 0 is by convention the global measurement for pdu
+            # but a valid mapping for the wattemeter driver
+            # If all probed elements are mapped to 0, infer
+            # that they all contribute to the same probe 
             if len(filter(lambda x: x[1] != 0, equip['mapping'])) > 0:
-                equip['mapping'] = sorted(equip['mapping'], key=lambda x: x[1])
-                equip['probes'] = [None] * equip['mapping'][-1][1]
-                equip['probes_names'] = [None] * equip['mapping'][-1][1]
-                for probe, outlet in equip['mapping']:
-                    equip['probes'][outlet-1] = "%s.%s" % (pdu, outlet)
-                    if equip['probes_names'][outlet-1]:
-                        equip['probes_names'][outlet-1].append("%s.%s"% (site, probe))
+                # find the max port number.
+		equip['mapping'] = sorted(equip['mapping'], key=lambda x: x[1])
+		nb_probes=equip['mapping'][-1][1]
+		outlet_offset=1
+		if equip['mapping'][0][1]==0:
+		   # outlet number usualy start at 1, 
+		   # but need to handle the case they start at 0
+                   # for the wattmeter probe 
+		   nb_probes+=1
+		   outlet_offset=0
+                equip['probes'] = [None] * nb_probes
+                equip['probes_names'] = [None] * nb_probes
+		for probe, outlet in equip['mapping']:
+		    equip['probes'][outlet-outlet_offset] = "%s.%s" % (pdu, outlet)
+                    if equip['probes_names'][outlet-outlet_offset]:
+			equip['probes_names'][outlet-outlet_offset].append("%s.%s"% (site, probe))
                     else:
-                        equip['probes_names'][outlet-1] = ["%s.%s" % (site, probe)]
+                        equip['probes_names'][outlet-outlet_offset] = ["%s.%s" % (site, probe)]
             else:
                 equip['probes'] = ["%s.%s" % (pdu, 0)]
                 equip['probes_names'] = [None]
@@ -219,8 +242,13 @@ network_probes = {}
 topo = {}
 try:
     for switch in switchs:
-        ifDescr_list = retrieve_switch_if(switch)
-        probes = [None] * len(ifDescr_list)
+        probes = [None]
+        try:
+            ifDescr_list = retrieve_switch_if(switch)
+            probes = [None] * len(ifDescr_list)
+        except:
+            logger.error('Failed to retrieve switch info via SNMP: %s' % switch)
+            continue
         for port_name in switchs[switch]:
             if not port_name in ifDescr_list:
                 logger.error("Port %s not found in %s" % (port_name, switch))
@@ -231,16 +259,17 @@ try:
             if len(probes) == 0:
                 break
         switch_probes[switch] = probes
-except:
-    logger.error('Failed to generate probe list')
-try:
-    for switch in switchs:
+except Exception as e:
+    logger.error('Failed to generate probe list: %s' % e)
+
+for switch in switchs:
+    try:
         probes_uid = format_probes(switch_probes[switch], switch, site, False)
         probes_names = format_probes(switch_probes[switch], switch, site, True)
 	network_probes[switch] = {'uid':probes_uid[1:],
 				  'names':probes_names[1:],}
-except:
-    logger.error('Failed to generate topology and network mapping')
+    except Exception as e:
+        logger.error('Failed to generation configuration for %s: %s' % (switch, e))
 # pprint(topo)
 # pprint(equips)
 # pprint(network_probes)
@@ -357,19 +386,19 @@ f.flush()
 f.write("\npowerProbes = %s" % powerProbes)
 f.close()
 
-logger.info('Adding drivers from API to /etc/kwapi/drivers.conf')
-bak_conf = Process('[ -f /etc/kwapi/drivers.conf.orig ] && cp /etc/kwapi/drivers.conf.orig /etc/kwapi/drivers.conf || cp /etc/kwapi/drivers.conf /etc/kwapi/drivers.conf.orig')
+logger.info('Adding drivers from API to %s/drivers.conf' % _output_dir)
+bak_conf = Process('[ -f %s/drivers.conf.orig ] && cp %s/drivers.conf.orig %s/drivers.conf || cp %s/drivers.conf %s/drivers.conf.orig' % (_output_dir, _output_dir, _output_dir, _output_dir, _output_dir))
 bak_conf.shell = True
 bak_conf.run()
-cat_conf = Process('cat /tmp/kwapi-drivers-list.conf >> /etc/kwapi/drivers.conf ; rm /tmp/kwapi-drivers-list.conf')
+cat_conf = Process('cat /tmp/kwapi-drivers-list.conf >> %s/drivers.conf ; rm /tmp/kwapi-drivers-list.conf' % _output_dir)
 cat_conf.shell = True
 cat_conf.run()
-logger.info('Adding probe-list from API to /etc/kwapi/live.conf')
-logger.info('Adding topology to /etc/kwapi/live.conf')
-bak_conf = Process('[ -f /etc/kwapi/live.conf.orig ] && cp /etc/kwapi/live.conf.orig /etc/kwapi/live.conf || cp /etc/kwapi/live.conf /etc/kwapi/live.conf.orig')
+logger.info('Adding probe-list from API to %s/live.conf' % _output_dir)
+logger.info('Adding topology to %s/live.conf' % _output_dir)
+bak_conf = Process('[ -f %s/live.conf.orig ] && cp %s/live.conf.orig %s/live.conf || cp %s/live.conf %s/live.conf.orig' % (_output_dir, _output_dir, _output_dir, _output_dir, _output_dir))
 bak_conf.shell = True
 bak_conf.run()
-cat_conf = Process('cat /tmp/kwapi-live-list.conf >> /etc/kwapi/live.conf ; rm /tmp/kwapi-live-list.conf')
+cat_conf = Process('cat /tmp/kwapi-live-list.conf >> %s/live.conf ; rm /tmp/kwapi-live-list.conf'% _output_dir)
 cat_conf.shell = True
 cat_conf.run()
 

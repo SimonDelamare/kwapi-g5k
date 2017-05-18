@@ -16,7 +16,8 @@
 
 """Set up the HDF5 server application instance."""
 
-import sys, signal
+import sys
+import signal
 import thread
 from threading import Thread
 
@@ -45,30 +46,37 @@ cfg.CONF.register_opts(app_opts)
 
 writters = []
 
+storePower = None
+storeNetworkIn = None
+storeNetworkOut = None
+
+
 def make_app():
     """Instantiates Flask app, attaches collector database. """
     LOG.info('Starting HDF5')
     app = flask.Flask(__name__)
     app.register_blueprint(v1.blueprint, url_prefix='')
 
-    storePower = HDF5_Collector('power')
-    storeNetworkIn = HDF5_Collector('network_in')
-    storeNetworkOut = HDF5_Collector('network_out')
+    app.storePower = HDF5_Collector('power')
+    app.storeNetworkIn = HDF5_Collector('network_in')
+    app.storeNetworkOut = HDF5_Collector('network_out')
 
-    #s.create_dir()
     thread.start_new_thread(listen, (hdf5_collector.update_hdf5,))
-    writters.append(Thread(target=storePower.write_datas,name="PowerWritter"))
-    writters.append(Thread(target=storeNetworkIn.write_datas,name="NetworkInWritter"))
-    writters.append(Thread(target=storeNetworkOut.write_datas,name="NetworkOutWritter"))
+    writters.append(Thread(target=app.storePower.write_datas,
+                           name="PowerWritter"))
+    writters.append(Thread(target=app.storeNetworkIn.write_datas,
+                           name="NetworkInWritter"))
+    writters.append(Thread(target=app.storeNetworkOut.write_datas,
+                           name="NetworkOutWritter"))
     for writter in writters:
         writter.daemon = True
         writter.start()
 
     @app.before_request
     def attach_config():
-        flask.request.storePower = storePower
-        flask.request.storeNetworkIn = storeNetworkIn
-        flask.request.storeNetworkOut = storeNetworkOut
+        flask.request.storePower = app.storePower
+        flask.request.storeNetworkIn = app.storeNetworkIn
+        flask.request.storeNetworkOut = app.storeNetworkOut
 
     return app
 
@@ -76,10 +84,10 @@ def signal_handler(signal, frame):
     LOG.info("FLUSH DATAS")
     for data_type in hdf5_collector.buffered_values:
         hdf5_collector.buffered_values[data_type].put('STOP')
-    for writter in writters:
-        writter.join()
-        LOG.info("DATA from %s FLUSHED" % writter.name)
-        writter = None
+    for i in range(len(writters)):
+        writters[0].join()
+        LOG.info("DATA from %s FLUSHED" % writters[0].name)
+        del writters[0]
     sys.exit(0)
 
 def start():

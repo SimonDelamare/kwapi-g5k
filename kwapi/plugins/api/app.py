@@ -39,6 +39,7 @@ app_opts = [
 ]
 
 cfg.CONF.register_opts(app_opts)
+collector = Collector()
 
 
 def make_app():
@@ -47,7 +48,6 @@ def make_app():
     app = flask.Flask(__name__)
     app.register_blueprint(v1.blueprint, url_prefix='')
 
-    collector = Collector()
     collector.clean()
 
     thread.start_new_thread(listen, (collector.add,))

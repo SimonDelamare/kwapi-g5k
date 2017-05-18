@@ -41,6 +41,7 @@ class DummyNet(Driver):
     def run(self):
         """Starts the driver thread."""
         while not self.stop_request_pending():
+            req_time = time.time()
             measure_time = time.time()
             for probe_id in self.probe_ids:
                 if not probe_id:
@@ -49,4 +50,4 @@ class DummyNet(Driver):
                                measure_time,
                                int(measure_time + (round(math.sin(math.pi*(measure_time%100)/100),2)*100)) % 2**32)
                 self.send_measurements(probe_id, measurements)
-            time.sleep(1)
+            time.sleep(max(0, 1-(time.time()-req_time)))
