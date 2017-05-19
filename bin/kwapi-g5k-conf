@@ -21,7 +21,6 @@ _output_dir = '/etc/kwapi'
 hostname = getfqdn().split('.')
 site = hostname[1] if len(hostname) > 2 else hostname[0]
 # site = 'lyon'
-config.g5k_configuration["api_additional_args"] = ["branch=testing"]
 
 def to_long_uid(uid, site):
     if uid:
@@ -150,56 +149,55 @@ except Exception as e:
 
 logger.info('Retrieving hosts plug mapping')
 switch_probes = {}
-def map_power(node):
-    print node['uid']
-    if not 'sensors' in node:
-        return
-    if not 'power' in node['sensors']:
-        return
-    power = node['sensors']['power']
-
-    if power['available']:
-        if 'pdu' in power['via']:
-            if isinstance(power['via']['pdu'], list):
-                for pdu in power['via']['pdu']:
-                    if 'port' in pdu:
-                        equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
-                    else:
-                        if isinstance(pdu, list):
-                            logger.error("Malformed pdu : %s" % pdu)
-                            return
-                        if pdu['uid'] is None:
-                            #print power
-                            return
+def map_power(device):
+    try:
+        if not 'sensors' in device:
+            return
+        if not 'power' in device['sensors']:
+            return
+        power = device['sensors']['power']
+        if power['available']:
+            if 'pdu' in power['via']:
+                if isinstance(power['via']['pdu'], list):
+                    for pdu in power['via']['pdu']:
+                        if 'port' in pdu:
+                            equips[pdu['uid'].split('.')[0]]['mapping'].append((device['uid'], pdu['port']))
                         else:
-                            equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
-            else:
-                pdu = power['via']['pdu']
-                if 'port' in pdu:
-                    logger.warning('node ' + node['uid'] + ' has str instead of list for power[\'via\']')
-                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], pdu['port']))
+                            if isinstance(pdu, list):
+                                logger.error("Malformed pdu : %s" % pdu)
+                                return
+                            if pdu['uid'] is None:
+                                return
+                            else:
+                                equips[pdu['uid'].split('.')[0]]['mapping'].append((device['uid'], 0))
                 else:
-                    equips[pdu['uid'].split('.')[0]]['mapping'].append((node['uid'], 0))
-        if 'www' in power['via']:
-            if not 'per_outlets' in power or power['per_outlets']:
-                pass #used to be required to generate a first list of mappings. As from 2016-01-14, found in reference API
+                    pdu = power['via']['pdu']
+                    if 'port' in pdu:
+                        logger.warning('device ' + device['uid'] + ' has str instead of list for power[\'via\']')
+                        equips[pdu['uid'].split('.')[0]]['mapping'].append((device['uid'], pdu['port']))
+                    else:
+                        equips[pdu['uid'].split('.')[0]]['mapping'].append((device['uid'], 0))
+    except Exception as e:
+        logger.error('[%s] Failed to retrieve power information: %s' % (device['uid'], e))
 
 logger.info('Map port to hostname')
 try:
     for cluster in get_site_clusters(site, queues=None):
-        nodes = get_resource_attributes('/sites/' + site + '/clusters/' + cluster + \
-                                        '/nodes')['items']
-        for node in nodes:
+        for node in get_resource_attributes('/sites/' + site + '/clusters/' + cluster + '/nodes')['items']:
             map_power(node)
-    switchs = get_resource_attributes('/sites/' + site + '/network_equipments')['items']
-    for switch in switchs:
+except Exception as e:
+    logger.error('Failed to retrieve node information from the API: %s' % e)
+try:
+    for switch in get_resource_attributes('/sites/' + site + '/network_equipments')['items']:
         map_power(switch)
+except Exception as e:
+    logger.error('Failed to retrieve switch information from the API: %s' % e)
+try:
     servers = get_resource_attributes('/sites/' + site + '/servers')['items']
     for server in servers:
         map_power(server)
-
 except Exception as e:
-    logger.error('Failed to map power pdus: %r' % e)
+    logger.error('Failed to retrieve server information from the API: %s' % e)
 
 #pprint(equips)
 logger.info('Generating probe list for Snmp drivers')
