@@ -9,3 +9,7 @@ cover/
 *.xml
 env_kwapi-g5k/
 *.tar.gz
+build/
+deb_dist/
+dist/
+kwapi-g5k-1.1.6/
