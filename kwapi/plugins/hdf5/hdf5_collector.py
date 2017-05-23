@@ -30,9 +30,6 @@ hdf5_opts = [
     cfg.StrOpt('hdf5_dir',
                required=True,
                ),
-    cfg.StrOpt('hdf5_dir',
-               required=True,
-               ),
     cfg.StrOpt('start_date',
                required=True,
                ),
@@ -106,10 +103,11 @@ class HDF5_Collector:
     drivers.
     """
 
-    def __init__(self, data_type):
+    def __init__(self, data_type, outlet_nodes):
         """Initializes an empty database and start listening the endpoint."""
         LOG.info('Starting Writter')
         self.data_type = data_type
+        self.per_outlet_nodes = outlet_nodes
         self.lock = Lock()
         self.measurements = dict()
         self.chunk_size = cfg.CONF.chunk_size
@@ -119,7 +117,6 @@ class HDF5_Collector:
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
-
         """Retrieve next update date"""
         self.start_date = datetime.strptime(cfg.CONF.start_date, "%Y/%m/%d")
         self.save_date = self.start_date
@@ -144,7 +141,13 @@ class HDF5_Collector:
         return cfg.CONF.hdf5_dir + \
             '/%s_%s_%s' % (self.save_date.strftime("%Y_%m_%d"), self.data_type, 'store.h5')
 
-
+    def get_node_name(self, probe):
+        """ Return the name of the node if the associated PDU has per_outlet monitoring or
+        an empty string"""
+        for name in self.per_outlet_nodes:
+            if probe in self.per_outlet_nodes[name]:
+                return name
+        return ''
 
     def write_datas(self):
         """Stores data for this probe."""
@@ -152,6 +155,7 @@ class HDF5_Collector:
         if not self.data_type in buffered_values:
             return
         for probe, timestamp, metrics in iter(buffered_values[self.data_type].get, 'STOP'):
+            print 'values from %s' % probe
             if not probe in self.measurements:
                 self.measurements[probe] = []
             self.measurements[probe].append((timestamp, metrics))
@@ -196,7 +200,10 @@ class HDF5_Collector:
                 neighbor_path = get_probe_path(probe_neighbor)
                 if not neighbor_path in f:
                     _, cluster,neighbor_probe_name = neighbor_path.split('/')
-                    f.create_hard_link(group, neighbor_probe_name, table)
+                    if neighbor_probe_name in self.per_outlet_nodes and \
+                            len(self.per_outlet_nodes[neighbor_probe_name]['pdus']) == 1:
+                        # The node is connected to only one PDU with per_outlet monitoring
+                        f.create_hard_link(group, neighbor_probe_name, table)
         except Exception as e:
             LOG.error("Fail to add %s datas" % probe)
             LOG.error("%s" % e)

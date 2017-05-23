@@ -20,7 +20,7 @@ import sys
 import signal
 import thread
 from threading import Thread
-
+import ast
 import flask
 from kwapi.plugins import listen
 from kwapi.utils import cfg, log
@@ -35,6 +35,9 @@ app_opts = [
                     required=True,
                     ),
     cfg.IntOpt('hdf5_port',
+               required=True,
+               ),
+    cfg.StrOpt('driver_conf',
                required=True,
                ),
     cfg.StrOpt('log_file',
@@ -57,9 +60,27 @@ def make_app():
     app = flask.Flask(__name__)
     app.register_blueprint(v1.blueprint, url_prefix='')
 
-    app.storePower = HDF5_Collector('power')
-    app.storeNetworkIn = HDF5_Collector('network_in')
-    app.storeNetworkOut = HDF5_Collector('network_out')
+    # Parse the driver configuration
+    per_outlet_nodes = {}
+    parser = cfg.ConfigParser(cfg.CONF.driver_conf, {})
+    parser.parse()
+    for section, entries in parser.sections.iteritems():
+        if section != 'DEFAULT' and 'pdu' in section:
+            # Detect nodes with per_outlet monitoring
+            probe_names = ast.literal_eval(entries['probes_names'][0])
+            probes = ast.literal_eval(entries['probes'][0])
+            if len(probe_names[0]) == 1:
+                for i in range(0, len(probe_names)):
+                    if probe_names[i] is not None:
+                        name = probe_names[i][0].split('.')[-1].replace('-', '_')
+                        probe = probes[i]
+                        if name not in per_outlet_nodes:
+                            per_outlet_nodes[name] = {'pdus': []}
+                        per_outlet_nodes[name]['pdus'].append(probe)
+    # HDF5 Collectors
+    app.storePower = HDF5_Collector('power', per_outlet_nodes)
+    app.storeNetworkIn = HDF5_Collector('network_in', {})
+    app.storeNetworkOut = HDF5_Collector('network_out', {})
 
     thread.start_new_thread(listen, (hdf5_collector.update_hdf5,))
     writters.append(Thread(target=app.storePower.write_datas,
@@ -77,7 +98,6 @@ def make_app():
         flask.request.storePower = app.storePower
         flask.request.storeNetworkIn = app.storeNetworkIn
         flask.request.storeNetworkOut = app.storeNetworkOut
-
     return app
 
 def signal_handler(signal, frame):
