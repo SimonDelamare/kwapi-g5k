@@ -75,7 +75,7 @@ def make_app():
                         name = probe_names[i][0].split('.')[-1].replace('-', '_')
                         probe = probes[i]
                         if name not in per_outlet_nodes:
-                            per_outlet_nodes[name] = {'pdus': []}
+                            per_outlet_nodes[name] = {'pdus': [], 'cons': {}}
                         per_outlet_nodes[name]['pdus'].append(probe)
     # HDF5 Collectors
     app.storePower = HDF5_Collector('power', per_outlet_nodes)

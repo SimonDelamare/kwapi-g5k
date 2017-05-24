@@ -45,6 +45,9 @@ hdf5_opts = [
     cfg.IntOpt('chunk_size',
                required=True,
                ),
+    cfg.IntOpt('delta_timestamp_seconds',
+               required=True,
+               ),
 ]
 
 cfg.CONF.register_opts(hdf5_opts)
@@ -111,6 +114,7 @@ class HDF5_Collector:
         self.lock = Lock()
         self.measurements = dict()
         self.chunk_size = cfg.CONF.chunk_size
+        self.delta_timestamps = cfg.CONF.delta_timestamp_seconds
         """Creates all required directories."""
         try:
             os.makedirs(cfg.CONF.hdf5_dir)
@@ -145,18 +149,18 @@ class HDF5_Collector:
         """ Return the name of the node if the associated PDU has per_outlet monitoring or
         an empty string"""
         for name in self.per_outlet_nodes:
-            if probe in self.per_outlet_nodes[name]:
+            if probe in self.per_outlet_nodes[name]['pdus']:
                 return name
         return ''
 
     def write_datas(self):
         """Stores data for this probe."""
         """Updates HDF5 file associated with this probe."""
-        if not self.data_type in buffered_values:
+        if self.data_type not in buffered_values:
             return
         for probe, timestamp, metrics in iter(buffered_values[self.data_type].get, 'STOP'):
-            print 'values from %s' % probe
-            if not probe in self.measurements:
+            # Processing probe metrics
+            if probe not in self.measurements:
                 self.measurements[probe] = []
             self.measurements[probe].append((timestamp, metrics))
             if len(self.measurements[probe]) >= self.chunk_size:
@@ -166,10 +170,41 @@ class HDF5_Collector:
                                 np.array(zipped[1]))  # measures
                 del self.measurements[probe][:]
             buffered_values[self.data_type].task_done()
+            # Processing metrics for node with multiple power supplies
+            node_name = self.get_node_name(probe)
+            if node_name in self.per_outlet_nodes and len(self.per_outlet_nodes[node_name]['pdus']) > 1:
+                # Try to aggregate power consumptions
+                node = self.per_outlet_nodes[node_name]
+                node['cons'][probe] = [timestamp, metrics]
+                if len(node['pdus']) == len(node['cons']):
+                    # Check the difference between timestamps
+                    min_timestamp = 9999999999
+                    aggregating = True
+                    values = []
+                    for cons in node['cons'].values():
+                        # Array of consumptions to sum them later
+                        values.append(cons[1])
+                        # Compute the minimum timestamp
+                        if cons[0] < min_timestamp:
+                            min_timestamp = cons[0]
+                    for cons in node['cons'].values():
+                        if cons[0] - min_timestamp > self.delta_timestamps:
+                            aggregating = False
+                    if aggregating:
+                        node_name = '%s.%s' % (probe.split('.')[0], node_name)
+                        if node_name not in self.measurements:
+                            self.measurements[node_name] = []
+                        self.measurements[node_name].append((min_timestamp, sum(values)))
+                        node['cons'] = {}
+                        if len(self.measurements[node_name]) >= self.chunk_size:
+                            zipped = map(list, zip(*self.measurements[node_name]))
+                            self.write_hdf5(node_name,
+                                            np.array(zipped[0]),  # Timestp
+                                            np.array(zipped[1]))  # measures
+                            del self.measurements[node_name][:]
         # Flush datas
         LOG.info("FLUSH DATAS... %s", self.data_type)
-        keys = self.measurements.keys()
-        for probe in keys:
+        for probe in self.measurements.keys():
             zipped = map(list, zip(*self.measurements[probe]))
             if len(zipped) == 2:
                 self.write_hdf5(probe,
@@ -195,15 +230,11 @@ class HDF5_Collector:
                 table.row['measure'] = measures[x]
                 table.row.append()
             table.flush()
-            probes_neighbors = probes_names_maps[self.data_type].neighbors(probe)
-            for probe_neighbor in probes_neighbors:
-                neighbor_path = get_probe_path(probe_neighbor)
-                if not neighbor_path in f:
-                    _, cluster,neighbor_probe_name = neighbor_path.split('/')
-                    if neighbor_probe_name in self.per_outlet_nodes and \
-                            len(self.per_outlet_nodes[neighbor_probe_name]['pdus']) == 1:
-                        # The node is connected to only one PDU with per_outlet monitoring
-                        f.create_hard_link(group, neighbor_probe_name, table)
+            node_name = self.get_node_name(probe)
+            if len(node_name) > 0 and len(self.per_outlet_nodes[node_name]['pdus']) == 1:
+                path = get_probe_path('%s.%s' % (probe.split('.')[0], node_name))
+                if path not in f:
+                    f.create_hard_link(group, node_name, table)
         except Exception as e:
             LOG.error("Fail to add %s datas" % probe)
             LOG.error("%s" % e)
