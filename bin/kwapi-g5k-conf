@@ -278,7 +278,7 @@ logger.info('Writing new configuration file')
 powerProbes = []
 f = open('/tmp/kwapi-drivers-list.conf', 'w')
 for equip, data in equips.iteritems():
-    if 'probes' in data and data['probes']:
+    if 'probes' in data and data['probes'] and len(data['probes']) > 0:
         sec = "\n["+equip+"]\n"
         sec += "probes = ["
         for probe in data['probes']:
@@ -316,68 +316,69 @@ OID_IN  = "1.3.6.1.2.1.31.1.1.1.6"
 OID_OUT = "1.3.6.1.2.1.31.1.1.1.10"
 
 for switch, probes in network_probes.iteritems():
-    sec = "\n[%s-IN]\n" % switch
-    sec += "probes = ["
-    for probe in probes['uid']:
-        if probe:
-            sec += "'" + probe + "'"
-        else:
-            sec += str(None)
-        sec += ", "
-    sec += "]\n"
-    sec += "probes_names = ["
-    for probe in probes['names']:
-        if not type(probe) == list:
+    if len(probes['uid']) > 0:
+        sec = "\n[%s-IN]\n" % switch
+        sec += "probes = ["
+        for probe in probes['uid']:
             if probe:
-                sec += "'%s'" % probe
+                sec += "'" + probe + "'"
             else:
                 sec += str(None)
-        else:
-            sec += "["
-            for p in probe:
-                if p:                             
-                    sec += "'%s'" % p
+            sec += ", "
+        sec += "]\n"
+        sec += "probes_names = ["
+        for probe in probes['names']:
+            if not type(probe) == list:
+                if probe:
+                    sec += "'%s'" % probe
                 else:
                     sec += str(None)
-                sec += ", "
-            sec += "]"
-        sec += ", "
-    sec += "]\n"
-    sec += "driver = Snmp\n"
-    sec += "data_type = {'name':'network_out', 'type':'Cumulative', 'unit':'B'}\n"
-    sec += "parameters = {'protocol': '"+_protocol_network+"', 'community': 'public', 'ip': '"+switch+"."+site+".grid5000.fr', 'oid': '"+OID_IN+"'}\n"
-    f.write(sec)
-    sec = "\n[%s-OUT]\n" % switch
-    sec += "probes = ["
-    for probe in probes['uid']:
-        if probe:
-            sec += "'" + probe + "'"
-        else:
-            sec += str(None)
-        sec += ", "
-    sec += "]\n"
-    sec += "probes_names = ["
-    for probe in probes['names']:
-        if not type(probe) == list:
+            else:
+                sec += "["
+                for p in probe:
+                    if p:                             
+                        sec += "'%s'" % p
+                    else:
+                        sec += str(None)
+                    sec += ", "
+                sec += "]"
+            sec += ", "
+        sec += "]\n"
+        sec += "driver = Snmp\n"
+        sec += "data_type = {'name':'network_out', 'type':'Cumulative', 'unit':'B'}\n"
+        sec += "parameters = {'protocol': '"+_protocol_network+"', 'community': 'public', 'ip': '"+switch+"."+site+".grid5000.fr', 'oid': '"+OID_IN+"'}\n"
+        f.write(sec)
+        sec = "\n[%s-OUT]\n" % switch
+        sec += "probes = ["
+        for probe in probes['uid']:
             if probe:
-                sec += "'%s'" % probe
+                sec += "'" + probe + "'"
             else:
                 sec += str(None)
-        else:
-            sec += "["
-            for p in probe:
-                if p:                             
-                    sec += "'%s'" % p
+            sec += ", "
+        sec += "]\n"
+        sec += "probes_names = ["
+        for probe in probes['names']:
+            if not type(probe) == list:
+                if probe:
+                    sec += "'%s'" % probe
                 else:
                     sec += str(None)
-                sec += ", "
-            sec += "]"
-        sec += ", "
-    sec += "]\n"
-    sec += "driver = Snmp\n"
-    sec += "data_type = {'name':'network_in', 'type':'Cumulative', 'unit':'B'}\n"
-    sec += "parameters = {'protocol': '"+_protocol_network+"', 'community': 'public', 'ip': '"+switch+"."+site+".grid5000.fr', 'oid': '"+OID_OUT+"'}\n"
-    f.write(sec)
+            else:
+                sec += "["
+                for p in probe:
+                    if p:                             
+                        sec += "'%s'" % p
+                    else:
+                        sec += str(None)
+                    sec += ", "
+                sec += "]"
+            sec += ", "
+        sec += "]\n"
+        sec += "driver = Snmp\n"
+        sec += "data_type = {'name':'network_in', 'type':'Cumulative', 'unit':'B'}\n"
+        sec += "parameters = {'protocol': '"+_protocol_network+"', 'community': 'public', 'ip': '"+switch+"."+site+".grid5000.fr', 'oid': '"+OID_OUT+"'}\n"
+        f.write(sec)
 f.close()
 f = open('/tmp/kwapi-live-list.conf', 'w')
 f.write("\n[TOPO]\n")
