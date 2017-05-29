@@ -231,7 +231,14 @@ class HDF5_Collector:
                 table.row.append()
             table.flush()
             node_name = self.get_node_name(probe)
-            if len(node_name) > 0 and len(self.per_outlet_nodes[node_name]['pdus']) == 1:
+            if len(self.per_outlet_nodes) == 0:
+                probes_neighbors = probes_names_maps[self.data_type].neighbors(probe)
+                for probe_neighbor in probes_neighbors:
+                    neighbor_path = get_probe_path(probe_neighbor)
+                    if not neighbor_path in f:
+                        _, cluster,neighbor_probe_name = neighbor_path.split('/')
+                        f.create_hard_link(group, neighbor_probe_name, table)
+            elif len(node_name) > 0 and len(self.per_outlet_nodes[node_name]['pdus']) == 1:
                 path = get_probe_path('%s.%s' % (probe.split('.')[0], node_name))
                 if path not in f:
                     f.create_hard_link(group, node_name, table)
