@@ -6,7 +6,6 @@
 
 
 from socket import getfqdn
-from pprint import pprint
 from execo import Process, logger
 from execo_g5k import get_site_clusters, get_cluster_hosts, get_host_attributes, get_resource_attributes, topology, config, get_site_network_equipments, get_network_equipment_attributes, get_site_hosts
 import re
@@ -30,6 +29,8 @@ def to_long_uid(uid, site):
 
 cmd_gen = cmdgen.CommandGenerator()
 def retrieve_switch_if(switch):
+    if 'grid5000' not in switch:
+        switch = '%s.%s.grid5000.fr' % (switch, site)
     community = cmdgen.CommunityData('public',mpModel=1)
     errorIndication, errorStatus, errorIndex, varBindTable = \
         cmd_gen.bulkCmd(
@@ -199,7 +200,6 @@ try:
 except Exception as e:
     logger.error('Failed to retrieve server information from the API: %s' % e)
 
-#pprint(equips)
 logger.info('Generating probe list for Snmp drivers')
 try:
     for pdu in equips:
@@ -271,9 +271,7 @@ for switch in switchs:
 				  'names':probes_names[1:],}
     except Exception as e:
         logger.error('Failed to generation configuration for %s: %s' % (switch, e))
-# pprint(topo)
-# pprint(equips)
-# pprint(network_probes)
+
 logger.info('Writing new configuration file')
 powerProbes = []
 f = open('/tmp/kwapi-drivers-list.conf', 'w')
