@@ -63,7 +63,8 @@ buffered_values = {
     "network_in" : Queue(),
     "network_out": Queue(),
 }
-
+# Global lock to manage read/write in HDF5 files
+hdf5_lock = Lock()
 
 def update_hdf5(probe, probes_names, data_type, timestamp, metrics, params):
     """Updates HDF5 file associated with this probe."""
@@ -111,7 +112,6 @@ class HDF5_Collector:
         LOG.info('Starting Writter')
         self.data_type = data_type
         self.per_outlet_nodes = outlet_nodes
-        self.lock = Lock()
         self.measurements = dict()
         self.chunk_size = cfg.CONF.chunk_size
         self.delta_timestamps = cfg.CONF.delta_timestamp_seconds
@@ -214,7 +214,7 @@ class HDF5_Collector:
         buffered_values[self.data_type].task_done()
 
     def write_hdf5(self, probe, timestamps, measures):
-        self.lock.acquire()
+        hdf5_lock.acquire()
         f = openFile(self.get_hdf5_file(), mode = "a")
         try:
             path = get_probe_path(probe)
@@ -248,7 +248,7 @@ class HDF5_Collector:
         finally:
             f.flush()
             f.close()
-            self.lock.release()
+            hdf5_lock.release()
 
     def get_probes_list(self):
         probes = []
@@ -301,7 +301,7 @@ class HDF5_Collector:
 
     def select_probes_datas(self, probes, start_time, end_time):
         message = dict()
-        self.lock.acquire()
+        hdf5_lock.acquire()
         list_files = self.get_hdf5_files(start_time, end_time)
         try:
             for filename in list_files:
@@ -335,5 +335,5 @@ class HDF5_Collector:
             #message[probe]['values'] = []
             LOG.error("%s" % e)
         finally:
-            self.lock.release()
+            hdf5_lock.release()
         return message
