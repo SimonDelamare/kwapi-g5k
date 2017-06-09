@@ -230,6 +230,10 @@ class HDF5_Collector:
                 table.row['measure'] = measures[x]
                 table.row.append()
             table.flush()
+            ''' Monitoring Trace to target the timestamp issue (other part in drivers/driver.py) '''
+            #if 'nancy.grisou-pdu2.5' in probe:
+            #    LOG.info('%s - %s: %s, %s' % (datetime.now(), probe, timestamps, measures))
+            ''' End of Monitoring Trace '''
             node_name = self.get_node_name(probe)
             if len(self.per_outlet_nodes) == 0:
                 probes_neighbors = probes_names_maps[self.data_type].neighbors(probe)

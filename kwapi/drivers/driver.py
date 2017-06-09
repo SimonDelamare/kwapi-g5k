@@ -14,6 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import datetime
 import json
 from threading import Thread, Event
 
@@ -76,6 +77,11 @@ class Driver(Thread):
     def send_measurements(self, probe_id, measurements):
         """Sends a message via ZeroMQ (dictionary dumped in JSON format)."""
         measurements['probe_id'] = probe_id
+        ''' Monitoring Trace to target the timestamp issue (other part in plugins/hdf5/hdf5_collector) '''
+        #if 'nancy.grisou-pdu2.5' in probe_id:
+        #    LOG.info('%s - %s: %d %d' % (datetime.datetime.now(), probe_id, 
+        #        measurements['timestamp'], measurements['measure']))
+        ''' End of Monitoring Trace '''
         if cfg.CONF.enable_signing:
             security.append_signature(measurements, cfg.CONF.metering_secret)
         self.publisher.send_multipart(
