@@ -69,7 +69,11 @@ def make_app():
             # Detect nodes with per_outlet monitoring
             probe_names = ast.literal_eval(entries['probes_names'][0])
             probes = ast.literal_eval(entries['probes'][0])
-            if len(probe_names[0]) == 1:
+            notNoneProbe = None
+            for p in probe_names:
+                if p is not None:
+                    notNoneProbe = p
+            if notNoneProbe is not None and len(notNoneProbe) == 1:
                 for i in range(0, len(probe_names)):
                     if probe_names[i] is not None:
                         name = probe_names[i][0].split('.')[-1].replace('-', '_')
@@ -77,6 +81,7 @@ def make_app():
                         if name not in per_outlet_nodes:
                             per_outlet_nodes[name] = {'pdus': [], 'cons': {}}
                         per_outlet_nodes[name]['pdus'].append(probe)
+    LOG.info('per outlet nodes: %s' % per_outlet_nodes.keys())
     # HDF5 Collectors
     app.storePower = HDF5_Collector('power', per_outlet_nodes)
     app.storeNetworkIn = HDF5_Collector('network_in', {})
