@@ -202,7 +202,7 @@ def retrieve_measurements(metric):
                                       {
                                           "rel": "self",
                                           "href": _get_api_path(headers) +
-                                          "sites/" + site + "/metrics/" + metric + "/timeseries/" + probe,
+                                          "sites/" + site + "/metrics/" + metric + "/timeseries?only=" + probe,
                                           "type": "application/vnd.fr.grid5000.api.Timeseries+json;level=1"
                                       },
                                       {
