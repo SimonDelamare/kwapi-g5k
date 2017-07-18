@@ -49,6 +49,8 @@ class Json_url(Driver):
                 json_content = None
                 hret = urllib2.urlopen(self.kwargs.get('url'))
                 json_str = hret.read()
+                # Fix malformed JSON from wattmetre
+                json_str = json_str.replace(': }', ': null}').replace(': ,', ': null,')
                 json_content = json.loads(json_str)
             except Exception as e:
                 LOG.error('Error while fetching json')
@@ -62,7 +64,7 @@ class Json_url(Driver):
                 for i in range(len(self.probes_names)):
                     probe = json_content.get(self.probes_names[i][0].split('.')[1])
                     # Grid5000 specific as we declare probes as site.cluster-#
-                    if probe:
+                    if probe and probe.get('timestamp') and probe.get('watt'):
                         if probe['timestamp'] != last_timestamps.get(i, -1):
                             measurements = self.create_measurements(self.probe_ids[i],
                                                                 probe['timestamp'],
